@@ -52,7 +52,8 @@ watch = [
 dev = [
     "black",
     "ruff",
-    "pytest"
+    "pytest",
+    "pyinstaller"
 ]
 
 [project.urls]
