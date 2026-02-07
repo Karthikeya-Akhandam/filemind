@@ -348,5 +348,32 @@ def search(
                 typer.echo("")
 
 
-if __name__ == "__main__":
-    app()
+
+@app.command()
+def uninstall():
+    """
+    Removes all FileMind data, including the database, FAISS index, and cached models.
+    This action is irreversible.
+    """
+    typer.secho("\nWARNING: This command will permanently delete ALL FileMind data,", fg=typer.colors.RED, bold=True)
+    typer.secho(f"including your database, FAISS index, and cached models located at: {config.APP_DIR}", fg=typer.colors.RED)
+    
+    confirm = typer.confirm("Are you sure you want to proceed?")
+    
+    if not confirm:
+        typer.secho("Uninstallation cancelled.", fg=typer.colors.YELLOW)
+        raise typer.Exit()
+        
+    try:
+        if config.APP_DIR.exists():
+            shutil.rmtree(config.APP_DIR)
+            typer.secho(f"Successfully removed FileMind data directory: {config.APP_DIR}", fg=typer.colors.GREEN)
+        else:
+            typer.secho(f"FileMind data directory not found at {config.APP_DIR}. Nothing to remove.", fg=typer.colors.YELLOW)
+    except Exception as e:
+        typer.secho(f"ERROR: Failed to remove FileMind data: {e}", fg=typer.colors.RED)
+        raise typer.Exit(1)
+        
+    typer.secho("FileMind uninstallation complete. You may also want to uninstall the Python package:", fg=typer.colors.GREEN)
+    typer.secho("  pip uninstall filemind", fg=typer.colors.BRIGHT_MAGENTA)
+
