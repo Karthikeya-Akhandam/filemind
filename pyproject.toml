@@ -8,20 +8,54 @@ version = "0.1.0"
 description = "Local-first file intelligence engine for deduplication and semantic search."
 readme = "README.md"
 requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "Your Name" } # Placeholder: Remember to update this to your actual name
+]
+
+keywords = [
+    "semantic-search",
+    "file-search",
+    "deduplication",
+    "offline",
+    "privacy",
+    "faiss",
+    "cli"
+]
+
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+
 dependencies = [
     "typer[all]",
     "pdfplumber",
     "python-docx",
-    "sentence-transformers",
     "onnxruntime",
-    "faiss-cpu",
-    "watchdog" 
+    "faiss-cpu"
 ]
+
+[project.optional-dependencies]
+init = [
+    "sentence-transformers"
+]
+
+watch = [
+    "watchdog"
+]
+
+dev = [
+    "black",
+    "ruff",
+    "pytest"
+]
+
+[project.urls]
+Homepage = "https://github.com/yourname/filemind" # Placeholder: Remember to update this
+Repository = "https://github.com/yourname/filemind" # Placeholder: Remember to update this
+Issues = "https://github.com/yourname/filemind/issues" # Placeholder: Remember to update this
 
 [project.scripts]
 filemind = "filemind.cli:app"
