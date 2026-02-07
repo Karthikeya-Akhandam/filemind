@@ -2,8 +2,22 @@ from pathlib import Path
 import os
 import time
 from typing import List
+from collections import defaultdict
 
 import typer
+import numpy as np
+
+# For init command
+try:
+    # These imports are expected to fail if 'filemind[init]' is not installed
+    from sentence_transformers import SentenceTransformer
+    from optimum.onnxruntime import ORTModelForFeatureExtraction
+    from transformers import AutoTokenizer, AutoConfig
+    import shutil
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
+
 
 from . import (
     config,
@@ -19,18 +33,6 @@ app = typer.Typer(
     help="FileMind: A local-first file intelligence engine.",
     add_completion=False,
 )
-
-# For init command
-try:
-    # These imports are expected to fail if 'filemind[init]' is not installed
-    from sentence_transformers import SentenceTransformer
-    from optimum.onnxruntime import ORTModelForFeatureExtraction
-    from transformers import AutoTokenizer, AutoConfig
-    import shutil
-    SENTENCE_TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    SENTENCE_TRANSFORMERS_AVAILABLE = False
-
 
 MODEL_NAME = "BAAI/bge-small-en-v1.5"
 
@@ -263,6 +265,88 @@ def duplicates():
             typer.echo(f"  - {file_path} (Size: {file_size} bytes, Modified: {time.ctime(mtime)})")
     
     typer.secho("\nDuplicate search complete.", fg=typer.colors.GREEN)
+
+
+@app.command()
+def search(
+    query: str = typer.Argument(..., help="The text to search for."),
+    top_k: int = typer.Option(5, "--top-k", "-k", help="Number of results to return."),
+):
+    """
+    Performs a hybrid search for files based on your query.
+    """
+    typer.secho(f"Searching for: '{query}'...", fg=typer.colors.BLUE)
+    database.initialize_database()
+    
+    # Load stores
+    try:
+        vs = vector_store.get_vector_store()
+        query_embedding = embedder.generate_embeddings([query])
+    except FileNotFoundError as e:
+        typer.secho(f"ERROR: {e}", fg=typer.colors.RED)
+        typer.secho("Please run 'filemind init' first.", fg=typer.colors.YELLOW)
+        raise typer.Exit(1)
+        
+    # 1. Semantic Search
+    distances, semantic_chunk_ids = vs.search(query_embedding, k=top_k * 2) # Fetch more to allow for merging
+    
+    # 2. Keyword Search
+    keyword_chunk_ids = repository.search_chunks_fts(query, limit=top_k * 2)
+
+    # 3. Merge and Rank Results
+    # Using defaultdict to store results for each file
+    file_results = defaultdict(lambda: {"max_score": 0.0, "keyword_hit": False, "best_chunk_id": -1})
+    
+    # Process semantic results
+    if semantic_chunk_ids.size > 0:
+        # FAISS returns 1-based IDs if we use its ID map, but here the index is the chunk_id
+        # We must add 1 to our chunk IDs when inserting to match this behavior if we used add_with_ids
+        # Since we use add(), the index is 0-based and corresponds to chunk_id - 1
+        semantic_chunk_ids_list = (semantic_chunk_ids[0] + 1).tolist()
+        
+        chunk_details = repository.get_chunk_details_by_ids(semantic_chunk_ids_list)
+        for i, (chunk_id, file_id, content) in enumerate(chunk_details):
+            score = float(distances[0][i])
+            if score > file_results[file_id]["max_score"]:
+                file_results[file_id]["max_score"] = score
+                file_results[file_id]["best_chunk_id"] = chunk_id
+
+    # Process keyword results
+    if keyword_chunk_ids:
+        chunk_details = repository.get_chunk_details_by_ids(keyword_chunk_ids)
+        for chunk_id, file_id, content in chunk_details:
+            file_results[file_id]["keyword_hit"] = True
+            # If a file was only found by keyword, it has no score, so assign a default
+            if file_results[file_id]["max_score"] == 0.0:
+                file_results[file_id]["best_chunk_id"] = chunk_id
+
+    # Boost score for keyword hits
+    for file_id in file_results:
+        if file_results[file_id]["keyword_hit"]:
+            file_results[file_id]["max_score"] += 0.1 # Simple boost
+
+    # Sort results by score
+    sorted_files = sorted(file_results.items(), key=lambda item: item[1]["max_score"], reverse=True)
+
+    # 4. Display Results
+    typer.secho("\n--- Search Results ---", fg=typer.colors.GREEN)
+    if not sorted_files:
+        typer.secho("No relevant files found.", fg=typer.colors.YELLOW)
+        return
+
+    for i, (file_id, data) in enumerate(sorted_files[:top_k]):
+        file_path = repository.get_file_path_by_id(file_id)
+        if file_path:
+            score_color = typer.colors.GREEN if data['max_score'] > 0.5 else typer.colors.YELLOW
+            typer.secho(f"\n{i+1}. Path: ", fg=typer.colors.WHITE, nl=False)
+            typer.secho(file_path, fg=typer.colors.CYAN)
+            typer.secho(f"   Score: ", nl=False)
+            typer.secho(f"{data['max_score']:.2f}", fg=score_color, bold=True, nl=False)
+            if data["keyword_hit"]:
+                typer.secho(" (Keyword Match)", fg=typer.colors.MAGENTA)
+            else:
+                typer.echo("")
+
 
 if __name__ == "__main__":
     app()

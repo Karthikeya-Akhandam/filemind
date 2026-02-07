@@ -44,6 +44,15 @@ def get_file_by_path(file_path: Path) -> Optional[Tuple[int, int, int]]:
     conn.close()
     return result
 
+def get_file_path_by_id(file_id: int) -> Optional[str]:
+    """Retrieves a file's path given its ID."""
+    conn = database.get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT file_path FROM files WHERE id = ?", (file_id,))
+    result = cursor.fetchone()
+    conn.close()
+    return result[0] if result else None
+
 def delete_file_and_chunks(file_id: int):
     """
     Deletes a file record and all its associated chunks from the database.
@@ -76,6 +85,7 @@ def add_chunk(file_id: int, chunk_index: int, content: str) -> int:
 
 def find_duplicate_hashes() -> List[Tuple[str, int]]:
     """
+
     Finds file hashes that appear more than once in the database.
 
     Returns:
@@ -108,6 +118,38 @@ def get_files_by_hash(file_hash: str) -> List[Tuple[str, int, int]]:
         "SELECT file_path, file_size, last_modified_time FROM files WHERE file_hash = ?",
         (file_hash,),
     )
+    results = cursor.fetchall()
+    conn.close()
+    return results
+
+def search_chunks_fts(query: str, limit: int = 20) -> List[int]:
+    """
+    Performs a full-text search on the chunks_fts table.
+
+    Returns:
+        A list of matching chunk IDs.
+    """
+    conn = database.get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT rowid FROM chunks_fts WHERE content MATCH ? ORDER BY rank LIMIT ?",
+        (query, limit),
+    )
+    results = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return results
+
+def get_chunk_details_by_ids(chunk_ids: List[int]) -> List[Tuple[int, int, str]]:
+    """
+    Retrieves chunk details (id, file_id, content) for a list of chunk IDs.
+    """
+    if not chunk_ids:
+        return []
+    conn = database.get_db_connection()
+    cursor = conn.cursor()
+    placeholders = ",".join("?" for _ in chunk_ids)
+    query = f"SELECT id, file_id, content FROM chunks WHERE id IN ({placeholders})"
+    cursor.execute(query, chunk_ids)
     results = cursor.fetchall()
     conn.close()
     return results
