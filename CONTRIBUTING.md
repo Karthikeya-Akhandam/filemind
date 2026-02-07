@@ -24,7 +24,7 @@ To get started with development, you'll need Python 3.8+ and `pip`.
 
 1.  **Fork and Clone the Repository:**
     ```bash
-    git clone https://github.com/YOUR_USERNAME/filemind.git
+    git clone https://github.com/Karthikeya-Akhandam/filemind.git
     cd filemind
     ```
 
