@@ -4,7 +4,7 @@
 
 The FileMind project takes the security of its users and data very seriously. We appreciate your efforts to responsibly disclose any vulnerabilities you may find.
 
-If you discover a security vulnerability within FileMind, please report it immediately by sending an confidential email to [YOUR_SECURITY_EMAIL@example.com](mailto:YOUR_SECURITY_EMAIL@example.com).
+If you discover a security vulnerability within FileMind, please report it immediately by sending an confidential email to [jamessafari@protonmail.com](mailto:jamessafari@protonmail.com).
 
 Please include:
 - A detailed description of the vulnerability.
