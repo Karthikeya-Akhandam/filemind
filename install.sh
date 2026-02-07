@@ -58,8 +58,8 @@ main() {
     exit 1
   fi
 
-  BINARY_NAME="$BIN_NAME-${OS_NAME}-${ARCH_NAME}"
-  DOWNLOAD_URL="https://github.com/$REPO/releases/download/$LATEST_RELEASE/$BINARY_NAME"
+  BINARY_NAME_VERSIONED="$BIN_NAME-$LATEST_RELEASE-${OS_NAME}-${ARCH_NAME}"
+  DOWNLOAD_URL="https://github.com/$REPO/releases/download/$LATEST_RELEASE/$BINARY_NAME_VERSIONED"
   INSTALL_DIR="/usr/local/bin"
   INSTALL_PATH="$INSTALL_DIR/$BIN_NAME"
 
