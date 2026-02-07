@@ -13,7 +13,7 @@ set -e
 #
 # This script is inspired by the installation scripts of many modern CLI tools.
 
-REPO="your-username/filemind" # <<< TODO: CHANGE THIS TO YOUR GITHUB USERNAME/REPO
+REPO="Karthikeya-Akhandam/filemind" # <<< TODO: CHANGE THIS TO YOUR GITHUB USERNAME/REPO
 BIN_NAME="filemind"
 
 get_latest_release() {

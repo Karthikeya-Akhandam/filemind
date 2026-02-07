@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 authors = [
-    { name = "Your Name" } # Placeholder: Remember to update this to your actual name
+    { name = "Karthikeya Akhandam" }
 ]
 
 keywords = [
@@ -57,9 +57,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourname/filemind" # Placeholder: Remember to update this
-Repository = "https://github.com/yourname/filemind" # Placeholder: Remember to update this
-Issues = "https://github.com/yourname/filemind/issues" # Placeholder: Remember to update this
+Homepage = "https://github.com/Karthikeya-Akhandam/filemind"
+Repository = "https://github.com/Karthikeya-Akhandam/filemind"
+Issues = "https://github.com/Karthikeya-Akhandam/filemind/issues"
 
 [project.scripts]
 filemind = "filemind.cli:app"
