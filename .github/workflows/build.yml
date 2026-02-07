@@ -9,12 +9,37 @@ permissions:
   contents: write
 
 jobs:
-  build-and-release:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+  build-and-upload:
+    needs: create-release
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.10']
+        include:
+          - os: ubuntu-latest
+            asset_name_suffix: linux-amd64
+            asset_name: filemind-linux-amd64
+          - os: macos-latest
+            asset_name_suffix: macos-amd64
+            asset_name: filemind-macos-amd64
+          - os: windows-latest
+            asset_name_suffix: windows-amd64.exe
+            asset_name: filemind-windows-amd64.exe
 
     steps:
     - name: Checkout code
@@ -23,7 +48,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v3
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.10'
 
     - name: Install dependencies
       run: |
@@ -32,63 +57,14 @@ jobs:
 
     - name: Build standalone binary with PyInstaller
       run: |
-        pyinstaller --onefile --name filemind-${{ matrix.os }} src/filemind/cli.py
+        pyinstaller --onefile --name filemind-${{ matrix.asset_name_suffix }} src/filemind/cli.py
 
-    - name: Prepare Release Artifacts (Windows)
-      if: matrix.os == 'windows-latest'
-      run: |
-        mv dist/filemind-windows-latest.exe filemind-windows-amd64.exe
-        
-    - name: Prepare Release Artifacts (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        mv dist/filemind-ubuntu-latest filemind-linux-amd64
-
-    - name: Prepare Release Artifacts (macOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-        mv dist/filemind-macos-latest filemind-macos-amd64
-
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
-
-    - name: Upload Windows Release Asset
-      if: matrix.os == 'windows-latest'
+    - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./filemind-windows-amd64.exe
-        asset_name: filemind-windows-amd64.exe
-        asset_content_type: application/octet-stream
-
-    - name: Upload Linux Release Asset
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./filemind-linux-amd64
-        asset_name: filemind-linux-amd64
-        asset_content_type: application/octet-stream
-
-    - name: Upload macOS Release Asset
-      if: matrix.os == 'macos-latest'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./filemind-macos-amd64
-        asset_name: filemind-macos-amd64
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./dist/filemind-${{ matrix.asset_name_suffix }}
+        asset_name: ${{ matrix.asset_name }}
         asset_content_type: application/octet-stream
