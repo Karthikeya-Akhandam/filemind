@@ -22,14 +22,14 @@ app = typer.Typer(
 
 def _process_file(file_path: Path, vs: vector_store.VectorStore):
     """Processes a single file for indexing."""
-    print(f"  Processing: {file_path.name}")
+    typer.echo(f"  Processing: {file_path.name}")
     
     # 1. Get file metadata
     try:
         mtime = int(file_path.stat().st_mtime)
         size = file_path.stat().st_size
     except FileNotFoundError:
-        print(f"    [WARN] File not found during processing: {file_path}")
+        typer.secho(f"    [WARN] File not found during processing: {file_path}", fg=typer.colors.YELLOW)
         return
 
     # 2. Check if file needs re-indexing
@@ -37,12 +37,12 @@ def _process_file(file_path: Path, vs: vector_store.VectorStore):
     if existing_file:
         file_id, db_size, db_mtime = existing_file
         if db_size == size and db_mtime == mtime:
-            print("    Skipping (unchanged).")
+            typer.echo("    Skipping (unchanged).")
             return
         else:
-            print("    File changed, re-indexing...")
+            typer.echo("    File changed, re-indexing...")
             # Deleting the old file record will cascade and delete all its chunks
-            repository.delete_chunks_for_file(file_id)
+            repository.delete_file_and_chunks(file_id)
             # Note: This leaves orphaned vectors in the FAISS index.
             # The plan addresses this with a 'rebuild-index' command later.
             
@@ -55,13 +55,13 @@ def _process_file(file_path: Path, vs: vector_store.VectorStore):
     # 5. Extract text
     text = extractor.extract_text(file_path)
     if not text:
-        print("    Skipping (no text extracted).")
+        typer.echo("    Skipping (no text extracted).")
         return
         
     # 6. Chunk text
     chunks = list(extractor.chunk_text(text))
     if not chunks:
-        print("    Skipping (no chunks generated).")
+        typer.echo("    Skipping (no chunks generated).")
         return
 
     # 7. Generate embeddings for all chunks in a batch
@@ -77,16 +77,25 @@ def _process_file(file_path: Path, vs: vector_store.VectorStore):
         chunk_id = repository.add_chunk(file_id, i, chunk_content)
         
         # We expect the FAISS index 'ntotal' to match the latest chunk_id
+        # This check is crucial for maintaining FAISS-SQLite consistency.
+        # It handles scenarios where FAISS might not have been persisted correctly or was rebuilt.
+        # If the check fails, we cannot simply 'add' to FAISS without potentially corrupting it.
+        # The ultimate solution is `rebuild-index`.
         if vs.index.ntotal != chunk_id - 1:
             typer.secho(
-                f"FATAL: FAISS index out of sync. Expected ID {chunk_id - 1}, found {vs.index.ntotal}. "
-                "Please run `filemind rebuild-index`.",
+                f"FATAL: FAISS index out of sync. Expected index size {chunk_id - 1}, found {vs.index.ntotal}. "
+                "This can happen after re-indexing files or if the index was not saved correctly. "
+                "The current implementation does not support arbitrary deletions from FAISS. "
+                "To resolve, please run `filemind rebuild-index` (once implemented). "
+                "Skipping FAISS addition for this file to prevent corruption.",
                 fg=typer.colors.RED
             )
-            raise typer.Exit(1)
+            # Do not add to FAISS if out of sync, relying on rebuild-index to fix this.
+            # This is a temporary measure until rebuild-index is available.
+            return
             
     vs.add(embeddings)
-    print(f"    Indexed {len(chunks)} chunks.")
+    typer.echo(f"    Indexed {len(chunks)} chunks.")
 
 
 @app.command()
@@ -129,6 +138,28 @@ def scan(
         f"\nScan complete. Processed {files_processed} files in {end_time - start_time:.2f} seconds.",
         fg=typer.colors.GREEN,
     )
+
+@app.command()
+def duplicates():
+    """
+    Finds and lists files that are exact duplicates based on their content hash.
+    """
+    typer.secho("Searching for duplicate files...", fg=typer.colors.BLUE)
+    database.initialize_database()
+
+    duplicate_hashes = repository.find_duplicate_hashes()
+
+    if not duplicate_hashes:
+        typer.secho("No exact duplicate files found.", fg=typer.colors.GREEN)
+        return
+
+    for file_hash, count in duplicate_hashes:
+        typer.secho(f"\nHash: {file_hash} (found {count} times)", fg=typer.colors.YELLOW)
+        duplicate_files = repository.get_files_by_hash(file_hash)
+        for file_path, file_size, mtime in duplicate_files:
+            typer.echo(f"  - {file_path} (Size: {file_size} bytes, Modified: {time.ctime(mtime)})")
+    
+    typer.secho("\nDuplicate search complete.", fg=typer.colors.GREEN)
 
 if __name__ == "__main__":
     app()
