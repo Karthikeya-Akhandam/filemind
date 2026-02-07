@@ -34,7 +34,9 @@ dependencies = [
     "pdfplumber",
     "python-docx",
     "onnxruntime",
-    "faiss-cpu"
+    "faiss-cpu",
+    "numpy",
+    "tokenizers"
 ]
 
 [project.optional-dependencies]
