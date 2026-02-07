@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / dll files
+__pycache__/
+*.pyc
+*.pyd
+*.so
+
+# C extensions
+*.dll
+*.so
+*.dylib
+
+# Distribution / packaging
+.Python
+build/
+dist/
+eggs/
+*.egg-info/
+.env/
+venv/
+*.venv/
+env/
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Logs
+*.log
+*.log.*
+
+# MyPy
+.mypy_cache/
+
+# pytest
+.pytest_cache/
+
+# Gemini CLI specific
+.gemini-cli/
+.geminiignore
+GEMINI.md
+
+# FileMind specific
+.filemind/
+
+# Local and temporary files
+local/
+tmp/
+filemind_project_plan.md
