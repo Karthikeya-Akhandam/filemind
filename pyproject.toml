@@ -41,7 +41,8 @@ dependencies = [
 
 [project.optional-dependencies]
 init = [
-    "sentence-transformers"
+    "sentence-transformers",
+    "optimum[onnxruntime]"
 ]
 
 watch = [

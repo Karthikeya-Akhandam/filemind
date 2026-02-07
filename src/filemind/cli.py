@@ -20,6 +20,109 @@ app = typer.Typer(
     add_completion=False,
 )
 
+# For init command
+try:
+    # These imports are expected to fail if 'filemind[init]' is not installed
+    from sentence_transformers import SentenceTransformer
+    from optimum.onnxruntime import ORTModelForFeatureExtraction
+    from transformers import AutoTokenizer, AutoConfig
+    import shutil
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
+
+
+MODEL_NAME = "BAAI/bge-small-en-v1.5"
+
+@app.command()
+def init():
+    """
+    Initializes FileMind: sets up directories, downloads and converts the model,
+    and initializes the database.
+    """
+    typer.secho("Initializing FileMind...", fg=typer.colors.BLUE)
+    
+    if not SENTENCE_TRANSFORMERS_AVAILABLE:
+        typer.secho(
+            "ERROR: 'sentence-transformers', 'optimum', and 'transformers' are required for initialization. "
+            "Please install them: pip install 'filemind[init]'",
+            fg=typer.colors.RED
+        )
+        raise typer.Exit(1)
+
+    # 1. Ensure application directory exists
+    config.APP_DIR.mkdir(parents=True, exist_ok=True)
+    config.MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    typer.secho(f"Application directory created at: {config.APP_DIR}", fg=typer.colors.GREEN)
+
+    # 2. Initialize database
+    database.initialize_database()
+    typer.secho(f"Database initialized at: {config.DB_PATH}", fg=typer.colors.GREEN)
+
+    # 3. Download and convert model
+    typer.secho(f"Downloading and converting model '{MODEL_NAME}' to ONNX...", fg=typer.colors.BLUE)
+    
+    # Check if ONNX model and tokenizer already exist
+    onnx_model_path = config.MODEL_DIR / "model.onnx"
+    tokenizer_json_path = config.MODEL_DIR / "tokenizer.json"
+    
+    if onnx_model_path.exists() and tokenizer_json_path.exists():
+        typer.secho("ONNX model and tokenizer already exist. Skipping download and conversion.", fg=typer.colors.GREEN)
+    else:
+        # Download the model and tokenizer using SentenceTransformer and AutoTokenizer
+        try:
+            # SentenceTransformer downloads the model to a cache directory
+            model_cache_dir = config.MODEL_DIR / "hf_cache"
+            model_cache_dir.mkdir(exist_ok=True)
+            
+            sbert_model = SentenceTransformer(MODEL_NAME, cache_folder=str(model_cache_dir))
+            
+            # Save the Hugging Face model and tokenizer to a temporary directory for optimum export
+            temp_hf_model_path = config.MODEL_DIR / "temp_hf_model_for_export"
+            temp_hf_model_path.mkdir(exist_ok=True)
+            sbert_model.save(str(temp_hf_model_path)) # Saves PyTorch model and tokenizer
+            
+            # Load tokenizer from the downloaded path
+            tokenizer = AutoTokenizer.from_pretrained(str(temp_hf_model_path))
+            
+            # Create a dummy config for optimum to export
+            # AutoConfig.from_pretrained works with the same path as AutoTokenizer.
+            AutoConfig.from_pretrained(str(temp_hf_model_path)).save_pretrained(str(temp_hf_model_path))
+
+            typer.secho("Exporting model to ONNX and quantizing...", fg=typer.colors.YELLOW)
+            onnx_model = ORTModelForFeatureExtraction.from_pretrained(
+                str(temp_hf_model_path),
+                export=True,
+                opset=13, # Common opset version
+                feature="sentence-embedding"
+            )
+            # Save the ONNX model to the final location
+            onnx_model.save_pretrained(str(config.MODEL_DIR), file_name="model.onnx")
+            
+            # Save tokenizer directly to final MODEL_DIR
+            tokenizer.save_pretrained(str(config.MODEL_DIR))
+
+            typer.secho(f"Model converted and saved to {config.MODEL_DIR}", fg=typer.colors.GREEN)
+
+            # Clean up temporary model files
+            if model_cache_dir.exists():
+                shutil.rmtree(model_cache_dir)
+            if temp_hf_model_path.exists():
+                shutil.rmtree(temp_hf_model_path)
+
+        except Exception as e:
+            typer.secho(f"ERROR: Failed to download or convert model: {e}", fg=typer.colors.RED)
+            typer.secho("Please ensure you have an internet connection for initial setup.", fg=typer.colors.RED)
+            raise typer.Exit(1)
+
+    # 4. Initialize FAISS index file (if it doesn't exist)
+    vs = vector_store.get_vector_store() # This will create an empty index if not present
+    vs.save() # Persist the empty index
+    typer.secho(f"FAISS index initialized at: {config.FAISS_INDEX_PATH}", fg=typer.colors.GREEN)
+    
+    typer.secho("FileMind initialization complete! You can now run 'filemind scan <directory>'", fg=typer.colors.GREEN)
+
+
 def _process_file(file_path: Path, vs: vector_store.VectorStore):
     """Processes a single file for indexing."""
     typer.echo(f"  Processing: {file_path.name}")
