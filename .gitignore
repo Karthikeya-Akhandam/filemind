@@ -20,6 +20,9 @@ venv/
 *.venv/
 env/
 
+# Wiki Repo
+filemind.wiki/
+
 # Editors
 .idea/
 .vscode/
