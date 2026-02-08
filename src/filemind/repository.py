@@ -153,3 +153,17 @@ def get_chunk_details_by_ids(chunk_ids: List[int]) -> List[Tuple[int, int, str]]
     results = cursor.fetchall()
     conn.close()
     return results
+
+def get_all_chunks_ordered() -> List[Tuple[int, str]]:
+    """
+    Retrieves the ID and content of all chunks, ordered by ID.
+
+    Returns:
+        A list of tuples, where each tuple is (id, content).
+    """
+    conn = database.get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, content FROM chunks ORDER BY id ASC")
+    results = cursor.fetchall()
+    conn.close()
+    return results

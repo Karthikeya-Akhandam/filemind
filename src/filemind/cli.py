@@ -105,10 +105,13 @@ def _process_file(file_path: Path):
         if db_size == size and db_mtime == mtime:
             typer.echo("    Skipping (unchanged).")
             return
+        if db_size == size and db_mtime == mtime:
+            typer.echo("    Skipping (unchanged).")
+            return
         else:
             typer.echo("    File changed, re-indexing...")
             repository.delete_file_and_chunks(file_id)
-            # Note: This requires a `rebuild-index` command to clean up FAISS
+            typer.secho("    [WARN] Re-indexed a file. It is recommended to run 'filemind rebuild-index' to optimize the search index.", fg=typer.colors.YELLOW)
             
     file_hash = hasher.generate_file_hash(file_path)
     file_id = repository.add_file(file_path, file_hash, size, mtime)
@@ -157,6 +160,57 @@ def scan(directory: Path = typer.Argument(..., exists=True, file_okay=False, dir
     
     end_time = time.time()
     typer.secho(f"\nScan complete. Processed {files_processed} files in {end_time - start_time:.2f} seconds.", fg=typer.colors.GREEN)
+
+@app.command(name="rebuild-index")
+def rebuild_index():
+    """
+    Rebuilds the entire FAISS vector index from the database.
+    This is a slow operation but is necessary to fix index inconsistencies.
+    """
+    typer.secho("WARNING: This will rebuild the entire search index from the database.", fg=typer.colors.YELLOW)
+    typer.secho("This can be a slow process for large numbers of files.", fg=typer.colors.YELLOW)
+    if not typer.confirm("Are you sure you want to proceed?", default=None):
+        raise typer.Abort()
+
+    # LAZY IMPORT of heavy modules
+    from . import embedder, vector_store
+    import faiss
+
+    typer.secho("Starting index rebuild...", fg=typer.colors.BLUE)
+    start_time = time.time()
+
+    database.initialize_database()
+    all_chunks = repository.get_all_chunks_ordered()
+
+    if not all_chunks:
+        typer.secho("No chunks found in the database. Nothing to rebuild.", fg=typer.colors.YELLOW)
+        # Create and save an empty index
+        new_index = faiss.IndexFlatIP(vector_store.EMBEDDING_DIM)
+        faiss.write_index(new_index, str(config.FAISS_INDEX_PATH))
+        raise typer.Exit()
+
+    # Create a new index in memory
+    new_index = faiss.IndexFlatIP(vector_store.EMBEDDING_DIM)
+    
+    batch_size = 500
+    total_chunks = len(all_chunks)
+    
+    with typer.progressbar(range(0, total_chunks, batch_size), label="Re-embedding chunks") as progress:
+        for i in progress:
+            batch = all_chunks[i : i + batch_size]
+            chunk_content = [c[1] for c in batch]
+            
+            embeddings = embedder.generate_embeddings(chunk_content)
+            new_index.add(embeddings)
+    
+    # Atomically replace the old index
+    temp_index_path = config.FAISS_INDEX_PATH.with_suffix(".tmp")
+    faiss.write_index(new_index, str(temp_index_path))
+    os.rename(temp_index_path, config.FAISS_INDEX_PATH)
+
+    end_time = time.time()
+    typer.secho(f"\nIndex rebuild complete. Processed {total_chunks} chunks in {end_time - start_time:.2f} seconds.", fg=typer.colors.GREEN)
+
 
 @app.command()
 def duplicates():
