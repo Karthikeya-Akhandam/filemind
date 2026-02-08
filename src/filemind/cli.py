@@ -176,7 +176,7 @@ def duplicates():
     
     typer.secho("\nDuplicate search complete.", fg=typer.colors.GREEN)
 
-@app.command()
+@app.command(help="Performs a hybrid search. Use 'filemind search --help' for options.")
 def search(query: str = typer.Argument(..., help="The text to search for."), top_k: int = typer.Option(5, "--top-k", "-k", help="Number of results to return.")):
     """Performs a hybrid search for files based on your query."""
     # LAZY IMPORT of heavy modules
