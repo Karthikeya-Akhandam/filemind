@@ -240,7 +240,7 @@ def uninstall():
     typer.secho("\nWARNING: This will permanently delete ALL FileMind data.", fg=typer.colors.RED, bold=True)
     typer.secho(f"This includes the directory: {config.APP_DIR}", fg=typer.colors.RED)
     
-    if not typer.confirm("Are you sure you want to proceed?"):
+    if not typer.confirm("Are you sure you want to proceed?", default=None):
         typer.secho("Uninstallation cancelled.", fg=typer.colors.YELLOW)
         raise typer.Exit()
         
