@@ -40,11 +40,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-init = [
-    "sentence-transformers",
-    "optimum[onnxruntime]"
-]
-
 watch = [
     "watchdog"
 ]
