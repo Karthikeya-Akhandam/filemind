@@ -127,12 +127,11 @@ def _process_file(file_path: Path):
         typer.secho("ERROR: Model files not found. Please run 'filemind init'.", fg=typer.colors.RED)
         raise typer.Exit(1)
 
+    # 8. Add chunks to the database
     for i, chunk_content in enumerate(chunks):
-        chunk_id = repository.add_chunk(file_id, i, chunk_content)
-        if vs.index.ntotal != chunk_id - 1:
-            typer.secho(f"FATAL: FAISS index out of sync. A 'rebuild-index' is required.", fg=typer.colors.RED)
-            return # Stop processing to prevent further corruption
-            
+        repository.add_chunk(file_id, i, chunk_content)
+
+    # 9. Add all embeddings to the vector store in a single batch
     vs.add(embeddings)
     typer.echo(f"    Indexed {len(chunks)} chunks.")
 
