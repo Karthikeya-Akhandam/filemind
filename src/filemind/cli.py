@@ -206,7 +206,7 @@ def rebuild_index():
     # Atomically replace the old index
     temp_index_path = config.FAISS_INDEX_PATH.with_suffix(".tmp")
     faiss.write_index(new_index, str(temp_index_path))
-    os.rename(temp_index_path, config.FAISS_INDEX_PATH)
+    shutil.move(str(temp_index_path), str(config.FAISS_INDEX_PATH))
 
     end_time = time.time()
     typer.secho(f"\nIndex rebuild complete. Processed {total_chunks} chunks in {end_time - start_time:.2f} seconds.", fg=typer.colors.GREEN)
