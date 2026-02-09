@@ -6,19 +6,113 @@ on:
       - 'v*'
 
 permissions:
-  contents: write
+  contents: write # Workflow-level permission for writing to the repo
+
+jobs:
+  build-binaries:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e .[dev] # Install main dependencies and dev dependencies (including pyinstaller)
+
+      - name: Build with PyInstaller
+        run: pyinstaller --onefile src/filemind/cli.py
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: filemind-${{ matrix.os }}
+          path: dist/filemind* # Matches 'filemind' on Linux/macOS and 'filemind.exe' on Windows
+
+  create-github-release:
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Job-level permission for creating a release
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get tag version
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List downloaded artifacts (for debugging)
+        run: ls -R artifacts
+
+      - name: Upload Release Asset (Linux)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/filemind-ubuntu-latest/filemind
+          asset_name: filemind-linux-${{ steps.get_version.outputs.version }}
+          asset_content_type: application/octet-stream
+
+      - name: Upload Release Asset (Windows)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/filemind-windows-latest/filemind.exe
+          asset_name: filemind-windows-${{ steps.get_version.outputs.version }}.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload Release Asset (macOS)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/filemind-macos-latest/filemind
+          asset_name: filemind-macos-${{ steps.get_version.outputs.version }}
+          asset_content_type: application/octet-stream
+
   update-version-file:
-    needs: build-and-upload
+    needs: create-github-release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Update version.txt
         run: |
           # The tag is like 'v0.1.1', we want '0.1.1'
           VERSION=$(echo ${{ github.ref_name }} | sed 's/v//')
-          echo $VERSION > docs/version.txt
+          echo "$VERSION" > docs/version.txt
 
       - name: Commit and push changes
         run: |
