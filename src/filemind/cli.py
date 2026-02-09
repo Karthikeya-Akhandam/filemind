@@ -1,13 +1,16 @@
 from pathlib import Path
 import os
 import time
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from collections import defaultdict
 import sys
 import shutil
 import importlib.metadata
+# import subprocess # Not directly used by CLI, but useful for more complex scenarios
 
 import typer
+import requests # Used in version_check but also directly by upgrade command for clearer error handling
+from packaging.version import parse as parse_version # Used by upgrade command and version_check
 
 # Only import lightweight modules at the top level for fast startup
 from . import (
@@ -54,8 +57,9 @@ def main(
 def _show_update_notification():
     """Checks for a new version and prints a notification if available."""
     try:
-        new_version, current_version = version_check.check_for_new_version()
-        if new_version:
+        new_version_info = version_check.check_for_new_version()
+        if new_version_info:
+            new_version, current_version = new_version_info
             typer.secho(
                 f"\n[notice] A new version of FileMind is available: {current_version} -> {new_version}",
                 fg=typer.colors.YELLOW,
@@ -67,31 +71,65 @@ def _show_update_notification():
 
 @app.command()
 def init():
-    """Initializes FileMind: sets up directories and prepares model assets."""
-    from . import vector_store # LAZY IMPORT
+    """
+    Initializes FileMind: sets up directories and prepares model assets.
+    """
+    # LAZY IMPORT: only needed for init
+    from . import vector_store
 
     typer.secho("Initializing FileMind...", fg=typer.colors.BLUE)
+    
+    # 1. Ensure application directory exists
     config.APP_DIR.mkdir(parents=True, exist_ok=True)
     config.MODEL_DIR.mkdir(parents=True, exist_ok=True)
-    database.initialize_database()
     typer.secho(f"Application data directory set up at: {config.APP_DIR}", fg=typer.colors.GREEN)
 
-    source_path = None
-    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        source_path = Path(sys._MEIPASS) / "models"
-    else:
-        source_path = Path(__file__).parent.parent.parent / "assets" / "models"
+    # 2. Initialize database
+    database.initialize_database()
+    typer.secho(f"Database initialized at: {config.DB_PATH}", fg=typer.colors.GREEN)
 
-    if source_path and source_path.exists():
-        if not all((config.MODEL_DIR / f).exists() for f in os.listdir(source_path)):
-            typer.secho("Copying model assets...", fg=typer.colors.BLUE)
-            shutil.copytree(source_path, config.MODEL_DIR, dirs_exist_ok=True)
-            typer.secho("Model assets copied.", fg=typer.colors.GREEN)
-    
+    # 3. Handle model assets
+    onnx_model_path = config.MODEL_DIR / "model.onnx"
+    tokenizer_json_path = config.MODEL_DIR / "tokenizer.json"
+
+    if onnx_model_path.exists() and tokenizer_json_path.exists():
+        typer.secho("Model assets already exist. Skipping preparation.", fg=typer.colors.GREEN)
+    else:
+        typer.secho("Preparing model assets...", fg=typer.colors.BLUE)
+        
+        # Check if running as a PyInstaller bundled app
+        source_path = None
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            # In a bundled app, assets are in a temporary folder (_MEIPASS)
+            source_path = Path(sys._MEIPASS) / "models"
+            typer.echo("Running in bundled mode. Locating assets...")
+        else:
+            # In dev mode, assets are in the repo's 'assets/models' directory
+            source_path = Path(__file__).parent.parent.parent / "assets" / "models"
+            typer.echo("Running in development mode. Locating assets...")
+
+        if source_path and source_path.exists():
+            try:
+                # Ensure a clean copy
+                if config.MODEL_DIR.exists():
+                    shutil.rmtree(config.MODEL_DIR) # Clean up existing model dir if incomplete
+                shutil.copytree(source_path, config.MODEL_DIR)
+                typer.secho(f"Copied model assets to {config.MODEL_DIR}", fg=typer.colors.GREEN)
+            except Exception as e:
+                typer.secho(f"ERROR: Failed to copy model assets from {source_path}: {e}", fg=typer.colors.RED)
+                raise typer.Exit(1)
+        else:
+            typer.secho(f"ERROR: Model assets not found at the source location ({source_path}).", fg=typer.colors.RED)
+            typer.secho("If running from source, ensure the 'assets/models' directory is populated.", fg=typer.colors.YELLOW)
+            raise typer.Exit(1)
+
+    # 4. Initialize FAISS index file
     vs = vector_store.get_vector_store()
-    if not config.FAISS_INDEX_PATH.exists():
-        vs.save()
-    typer.secho("Initialization complete!", fg=typer.colors.GREEN)
+    vs.save()
+    typer.secho(f"FAISS index initialized at: {config.FAISS_INDEX_PATH}", fg=typer.colors.GREEN)
+    
+    typer.secho("\nFileMind initialization complete! You can now run 'filemind scan <directory>'", fg=typer.colors.GREEN)
+    _show_update_notification()
 
 def _process_file(file_path: Path):
     """Processes a single file for indexing."""
@@ -167,9 +205,6 @@ def search(query: str = typer.Argument(...), top_k: int = typer.Option(5, "--top
     semantic_results = vs.search(query_embedding, k=top_k * 2)
     keyword_chunk_ids = repository.search_chunks_fts(query, limit=top_k * 2)
 
-    typer.echo(f"[Debug] Semantic matches found: {len(semantic_results[0])}")
-    typer.echo(f"[Debug] Keyword matches found: {len(keyword_chunk_ids)}")
-
     file_scores = repository.calculate_hybrid_scores(semantic_results, keyword_chunk_ids)
 
     typer.secho("\n--- Search Results ---", fg=typer.colors.GREEN)
@@ -194,24 +229,129 @@ def search(query: str = typer.Argument(...), top_k: int = typer.Option(5, "--top
 @app.command()
 def duplicates():
     """Finds and lists files that are exact duplicates based on their content hash."""
-    # ... (code for duplicates)
+    typer.secho("Searching for duplicate files...", fg=typer.colors.BLUE)
+    database.initialize_database()
+    duplicate_hashes = repository.find_duplicate_hashes()
+
+    if not duplicate_hashes:
+        typer.secho("No exact duplicate files found.", fg=typer.colors.GREEN)
+        return
+
+    for file_hash, count in duplicate_hashes:
+        typer.secho(f"\nHash: {file_hash} (found {count} times)", fg=typer.colors.YELLOW)
+        for file_info in repository.get_files_by_hash(file_hash):
+            typer.echo(f"  - {file_info[0]}")
     _show_update_notification()
 
 @app.command(name="rebuild-index")
 def rebuild_index():
-    """Rebuilds the FAISS index from the database."""
-    # ... (code for rebuild-index)
+    """
+    Rebuilds the entire FAISS vector index from the database.
+    This is a slow operation but is necessary to fix index inconsistencies.
+    """
+    typer.secho("WARNING: This will rebuild the entire search index from the database.", fg=typer.colors.YELLOW)
+    typer.secho("This can be a slow process for large numbers of files.", fg=typer.colors.YELLOW)
+    if not typer.confirm("Are you sure you want to proceed?", default=None):
+        raise typer.Abort()
+
+    from . import embedder, vector_store # LAZY IMPORT
+    import faiss
+
+    typer.secho("Starting index rebuild...", fg=typer.colors.BLUE)
+    start_time = time.time()
+
+    database.initialize_database()
+    all_chunks = repository.get_all_chunks_ordered()
+
+    if not all_chunks:
+        typer.secho("No chunks found in the database. Nothing to rebuild.", fg=typer.colors.YELLOW)
+        new_index = faiss.IndexFlatIP(vector_store.EMBEDDING_DIM)
+        faiss.write_index(new_index, str(config.FAISS_INDEX_PATH))
+        raise typer.Exit()
+
+    new_index = faiss.IndexFlatIP(vector_store.EMBEDDING_DIM)
+    
+    batch_size = 500
+    total_chunks = len(all_chunks)
+    
+    with typer.progressbar(range(0, total_chunks, batch_size), label="Re-embedding chunks") as progress:
+        for i in progress:
+            batch = all_chunks[i : i + batch_size]
+            chunk_content = [c[1] for c in batch]
+            
+            embeddings = embedder.generate_embeddings(chunk_content)
+            new_index.add(embeddings)
+    
+    temp_index_path = config.FAISS_INDEX_PATH.with_suffix(".tmp")
+    faiss.write_index(new_index, str(temp_index_path))
+    shutil.move(str(temp_index_path), str(config.FAISS_INDEX_PATH))
+
+    end_time = time.time()
+    typer.secho(f"\nIndex rebuild complete. Processed {total_chunks} chunks in {end_time - start_time:.2f} seconds.", fg=typer.colors.GREEN)
     _show_update_notification()
     
 @app.command()
 def upgrade():
     """Checks for and provides instructions to upgrade FileMind."""
-    # ... (code for upgrade)
+    
+    typer.secho("Checking for new versions...", fg=typer.colors.BLUE)
+
+    try:
+        current_version_str = importlib.metadata.version("filemind")
+        current_version = parse_version(current_version_str)
+    except importlib.metadata.PackageNotFoundError:
+        typer.secho("Could not determine current version (running from source?).", fg=typer.colors.YELLOW)
+        return
+
+    try:
+        new_version_info = version_check.check_for_new_version() # Reuse check_for_new_version logic
+        if new_version_info:
+            latest_version_str, _ = new_version_info
+            latest_version = parse_version(latest_version_str)
+        else:
+            latest_version = current_version # Assume current if check_for_new_version fails or no newer version
+
+        if latest_version > current_version:
+            typer.secho(f"\n🎉 A new version is available: {latest_version}", fg=typer.colors.GREEN)
+            if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+                typer.secho("To upgrade this standalone application, please re-run the installation script:", fg=typer.colors.GREEN)
+                typer.secho("  curl -fsSL https://raw.githubusercontent.com/Karthikeya-Akhandam/filemind/main/install.sh | sh", fg=typer.colors.BRIGHT_MAGENTA)
+            else:
+                typer.secho("To upgrade your pip-installed version, please run:", fg=typer.colors.GREEN)
+                typer.secho(f"  pip install --upgrade filemind", fg=typer.colors.BRIGHT_MAGENTA)
+        else:
+            typer.secho(f"✅ You are on the latest version: {current_version}", fg=typer.colors.GREEN)
+
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 403:
+            typer.secho("Could not check for new versions: GitHub Pages rate limit (unlikely) or network issue.", fg=typer.colors.RED)
+            typer.secho("Please try again in an hour or check the repository page manually.", fg=typer.colors.YELLOW)
+        else:
+            typer.secho(f"Error checking for new versions: {e}", fg=typer.colors.RED)
+    except requests.exceptions.RequestException as e:
+        typer.secho(f"Error checking for new versions: Network error.", fg=typer.colors.RED)
 
 @app.command()
 def uninstall():
-    """Removes all FileMind data."""
-    # ... (code for uninstall)
+    """Removes all FileMind data, including the database, index, and models."""
+    typer.secho("\nWARNING: This will permanently delete ALL FileMind data.", fg=typer.colors.RED, bold=True)
+    typer.secho(f"This includes the directory: {config.APP_DIR}", fg=typer.colors.RED)
+    
+    if not typer.confirm("Are you sure you want to proceed?", default=None):
+        typer.secho("Uninstallation cancelled.", fg=typer.colors.YELLOW)
+        raise typer.Exit()
+        
+    try:
+        if config.APP_DIR.exists():
+            shutil.rmtree(config.APP_DIR)
+            typer.secho(f"Successfully removed: {config.APP_DIR}", fg=typer.colors.GREEN)
+        else:
+            typer.secho("FileMind data directory not found. Nothing to remove.", fg=typer.colors.YELLOW)
+    except Exception as e:
+        typer.secho(f"ERROR: Failed to remove directory: {e}", fg=typer.colors.RED)
+        raise typer.Exit(1)
+        
+    typer.secho("\nFileMind uninstallation complete.", fg=typer.colors.GREEN)
 
 if __name__ == "__main__":
     app()
