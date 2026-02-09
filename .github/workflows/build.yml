@@ -9,11 +9,38 @@ permissions:
   contents: write # Workflow-level permission for writing to the repo
 
 jobs:
-  build-binaries:
+  create-release: # Job 1: Creates an empty release and gets its upload_url
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release_step.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release_step
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Use GITHUB_TOKEN first
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+
+  build-and-upload-assets: # Job 2: Builds for each OS and uploads assets to the release
+    needs: create-release
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include: # Define matrix combinations for OS and asset name
+          - os: ubuntu-latest
+            asset_name_suffix: linux-amd64
+            python_version: '3.10'
+          - os: macos-latest
+            asset_name_suffix: macos-amd64
+            python_version: '3.10'
+          - os: windows-latest
+            asset_name_suffix: windows-amd64.exe
+            python_version: '3.10'
 
     steps:
       - name: Checkout code
@@ -22,60 +49,47 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: ${{ matrix.python_version }}
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install -e .[dev] # Install main dependencies and dev dependencies (including pyinstaller)
 
-      - name: Build with PyInstaller
-        run: pyinstaller --onefile src/filemind/cli.py
+      - name: Build standalone binary with PyInstaller
+        id: build_pyinstaller
+        run: |
+          VERSION_TAG=${{ github.ref_name }} # e.g., v0.1.1
+          # PyInstaller uses specific names based on OS by default if --name is not specified or for the .exe extension
+          # We'll use a consistent name base and let PyInstaller handle the .exe for Windows.
+          # The old workflow had specific asset_name_suffix for Windows that included .exe
+          # Let's adjust PYINSTALLER_ADD_DATA syntax for cross-platform compatibility based on old workflow.
+          # Example: pyinstaller --onefile --name "filemind-v0.1.1-linux-amd64" --add-data "assets/models:models" src/filemind/cli.py
+          ASSET_BASE_NAME="filemind-${VERSION_TAG}-${{ matrix.asset_name_suffix }}"
+          PYINSTALLER_ADD_DATA="--add-data 'assets/models${{ runner.os == 'Windows' && ';' || ':' }}models'"
+          pyinstaller --onefile --name "$ASSET_BASE_NAME" $PYINSTALLER_ADD_DATA src/filemind/cli.py
+
+          # Determine the actual asset path and name for upload
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            echo "ASSET_UPLOAD_PATH=./dist/${ASSET_BASE_NAME}.exe" >> $GITHUB_ENV
+            echo "ASSET_UPLOAD_NAME=${ASSET_BASE_NAME}.exe" >> $GITHUB_ENV
+          else
+            echo "ASSET_UPLOAD_PATH=./dist/${ASSET_BASE_NAME}" >> $GITHUB_ENV
+            echo "ASSET_UPLOAD_NAME=${ASSET_BASE_NAME}" >> $GITHUB_ENV
+          fi
 
       - name: List dist directory contents
         run: ls -l dist/
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: filemind-${{ matrix.os }}
-          path: dist/filemind*
-
-  create-github-release:
-    needs: build-binaries
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Get tag version
-        id: get_version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-        shell: bash
-
-      - name: Download all build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: List downloaded artifacts (for debugging)
-        run: ls -R artifacts # This should now ideally work
-
-      - name: Create Release and Upload Assets
-        uses: softprops/action-gh-release@v2
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1 # Keep v1 as user said old one worked
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Use GITHUB_TOKEN first
         with:
-          tag_name: ${{ github.ref }}
-          name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-          files: |
-            artifacts/filemind-ubuntu-latest/filemind
-            artifacts/filemind-windows-latest/filemind.exe
-            artifacts/filemind-macos-latest/filemind
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ${{ env.ASSET_UPLOAD_PATH }}
+          asset_name: ${{ env.ASSET_UPLOAD_NAME }}
+          asset_content_type: application/octet-stream
 
   update-version-file:
     needs: create-github-release
