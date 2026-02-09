@@ -32,17 +32,20 @@ jobs:
       - name: Build with PyInstaller
         run: pyinstaller --onefile src/filemind/cli.py
 
+      - name: List dist directory contents
+        run: ls -l dist/
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: filemind-${{ matrix.os }}
-          path: dist/filemind* # Matches 'filemind' on Linux/macOS and 'filemind.exe' on Windows
+          path: dist/filemind*
 
   create-github-release:
     needs: build-binaries
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Job-level permission for creating a release
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -52,54 +55,27 @@ jobs:
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
       - name: List downloaded artifacts (for debugging)
-        run: ls -R artifacts
+        run: ls -R artifacts # This should now ideally work
 
-      - name: Upload Release Asset (Linux)
-        uses: actions/upload-release-asset@v1
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/filemind-ubuntu-latest/filemind
-          asset_name: filemind-linux-${{ steps.get_version.outputs.version }}
-          asset_content_type: application/octet-stream
-
-      - name: Upload Release Asset (Windows)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/filemind-windows-latest/filemind.exe
-          asset_name: filemind-windows-${{ steps.get_version.outputs.version }}.exe
-          asset_content_type: application/octet-stream
-
-      - name: Upload Release Asset (macOS)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/filemind-macos-latest/filemind
-          asset_name: filemind-macos-${{ steps.get_version.outputs.version }}
-          asset_content_type: application/octet-stream
+          tag_name: ${{ github.ref }}
+          name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/filemind-ubuntu-latest/filemind
+            artifacts/filemind-windows-latest/filemind.exe
+            artifacts/filemind-macos-latest/filemind
 
   update-version-file:
     needs: create-github-release
