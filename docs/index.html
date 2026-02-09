@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FileMind - Intelligent Local File Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <img src="logo.png" alt="FileMind Logo">
+                <h1>FileMind</h1>
+            </div>
+            <nav>
+                <a href="#features">Features</a>
+                <a href="#download">Download</a>
+                <a href="https://github.com/Karthikeya-Akhandam/filemind" target="_blank">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h2>Intelligent Local File Management</h2>
+            <p>Find what you're looking for based on content, not just filenames. A powerful, private, and offline-first search engine for your personal files.</p>
+            <a href="#download" class="cta-button">Get Started</a>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <h2>Core Features</h2>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <h3>Semantic Search</h3>
+                    <p>Search for concepts and ideas. Find documents even if they don't contain your exact keywords.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>Duplicate Detection</h3>
+                    <p>Identify and manage exact duplicate files to clean up clutter and save disk space.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>100% Offline & Private</h3>
+                    <p>Your files and data are never uploaded. All processing happens locally on your machine.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="download" class="download">
+        <div class="container">
+            <h2>Download FileMind</h2>
+            <p>Get the latest version: <span id="version-display">Loading...</span></p>
+            <div class="download-buttons">
+                <a href="https://github.com/Karthikeya-Akhandam/filemind/releases/latest" class="button">Download for Windows</a>
+                <a href="https://github.com/Karthikeya-Akhandam/filemind/releases/latest" class="button">Download for macOS</a>
+                <a href="https://github.com/Karthikeya-Akhandam/filemind/releases/latest" class="button">Download for Linux</a>
+            </div>
+             <div class="install-script">
+                <p>Or install on macOS & Linux with:</p>
+                <pre><code>curl -fsSL https://raw.githubusercontent.com/Karthikeya-Akhandam/filemind/main/install.sh | sh</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Karthikeya Akhandam. FileMind is released under the MIT License.</p>
+            <p><a href="https://github.com/Karthikeya-Akhandam/filemind">View on GitHub</a></p>
+        </div>
+    </footer>
+
+    <script>
+        // Fetch the version from version.txt and display it
+        fetch('version.txt')
+            .then(response => response.text())
+            .then(text => {
+                const version = text.trim();
+                document.getElementById('version-display').textContent = `v${version}`;
+            })
+            .catch(error => {
+                document.getElementById('version-display').textContent = 'N/A';
+                console.error('Error fetching version:', error);
+            });
+    </script>
+</body>
+</html>

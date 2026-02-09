@@ -7,62 +7,23 @@ on:
 
 permissions:
   contents: write
-
-jobs:
-  create-release:
+  update-version-file:
+    needs: build-and-upload
     runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_PAT }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-  build-and-upload:
-    needs: create-release
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            asset_name_suffix: linux-amd64
-          - os: macos-latest
-            asset_name_suffix: macos-amd64
-          - os: windows-latest
-            asset_name_suffix: windows-amd64.exe
+      - name: Update version.txt
+        run: |
+          # The tag is like 'v0.1.1', we want '0.1.1'
+          VERSION=$(echo ${{ github.ref_name }} | sed 's/v//')
+          echo $VERSION > docs/version.txt
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.10'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install .[dev]
-
-    - name: Build standalone binary with PyInstaller
-      run: |
-        pyinstaller --onefile --name filemind-${{ github.ref_name }}-${{ matrix.asset_name_suffix }} --add-data "assets/models${{ runner.os == 'Windows' && ';' || ':' }}models" src/filemind/cli.py
-
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.RELEASE_PAT }}
-      with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: ./dist/filemind-${{ github.ref_name }}-${{ matrix.asset_name_suffix }}
-        asset_name: filemind-${{ github.ref_name }}-${{ matrix.asset_name_suffix }}
-        asset_content_type: application/octet-stream
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add docs/version.txt
+          git commit -m "docs: Update version to ${{ github.ref_name }}" || echo "No changes to commit"
+          git push
