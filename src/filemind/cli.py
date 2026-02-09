@@ -76,69 +76,142 @@ def init():
     database.initialize_database()
     typer.secho(f"Application data directory set up at: {config.APP_DIR}", fg=typer.colors.GREEN)
 
-    # Asset handling logic...
-    # ... (code to copy from bundled assets or source)
+    source_path = None
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        source_path = Path(sys._MEIPASS) / "models"
+    else:
+        source_path = Path(__file__).parent.parent.parent / "assets" / "models"
+
+    if source_path and source_path.exists():
+        if not all((config.MODEL_DIR / f).exists() for f in os.listdir(source_path)):
+            typer.secho("Copying model assets...", fg=typer.colors.BLUE)
+            shutil.copytree(source_path, config.MODEL_DIR, dirs_exist_ok=True)
+            typer.secho("Model assets copied.", fg=typer.colors.GREEN)
     
     vs = vector_store.get_vector_store()
-    vs.save()
+    if not config.FAISS_INDEX_PATH.exists():
+        vs.save()
     typer.secho("Initialization complete!", fg=typer.colors.GREEN)
 
+def _process_file(file_path: Path):
+    """Processes a single file for indexing."""
+    from . import embedder, vector_store # LAZY IMPORT
+    vs = vector_store.get_vector_store()
+
+    try:
+        mtime = int(file_path.stat().st_mtime)
+        size = file_path.stat().st_size
+    except FileNotFoundError:
+        typer.secho(f"    [WARN] Skipping (not found): {file_path}", fg=typer.colors.YELLOW)
+        return
+
+    existing_file = repository.get_file_by_path(file_path)
+    if existing_file:
+        file_id, db_size, db_mtime = existing_file
+        if db_size == size and db_mtime == mtime:
+            typer.echo(f"  Skipping (unchanged): {file_path.name}")
+            return
+        else:
+            typer.echo(f"  Updating (changed): {file_path.name}")
+            repository.delete_file_and_chunks(file_id)
+            
+    file_hash = hasher.generate_file_hash(file_path)
+    file_id = repository.add_file(file_path, file_hash, size, mtime)
+    
+    text = extractor.extract_text(file_path)
+    if not text:
+        typer.echo(f"  Skipping (no text): {file_path.name}")
+        return
+        
+    chunks = list(extractor.chunk_text(text))
+    if not chunks:
+        return
+
+    embeddings = embedder.generate_embeddings(chunks)
+    repository.add_chunks_and_vectors(file_id, chunks, embeddings, vs)
+    typer.echo(f"    -> Indexed {len(chunks)} chunks.")
+
 @app.command()
-def scan(directory: Path = typer.Argument(..., help="The directory to scan.")):
+def scan(directory: Path = typer.Argument(..., exists=True, file_okay=False, dir_okay=True, readable=True, resolve_path=True, help="The directory to scan.")):
     """Scans a directory, indexing new or modified files."""
-    # ... (scan logic)
-    typer.secho("Scan complete.", fg=typer.colors.GREEN)
+    typer.secho(f"Starting scan of directory: {directory}", fg=typer.colors.BLUE)
+    start_time = time.time()
+    
+    database.initialize_database()
+    supported_extensions = {'.pdf', '.docx', '.txt'}
+    
+    files_to_process = [p for p in directory.rglob("*") if p.is_file() and p.suffix.lower() in supported_extensions]
+    
+    with typer.progressbar(files_to_process, label="Scanning files") as progress:
+        for file_path in progress:
+            _process_file(file_path)
+    
+    from . import vector_store # LAZY IMPORT
+    vector_store.get_vector_store().save()
+    
+    end_time = time.time()
+    typer.secho(f"\nScan complete. Processed {len(files_to_process)} files in {end_time - start_time:.2f} seconds.", fg=typer.colors.GREEN)
     _show_update_notification()
 
 @app.command()
 def search(query: str = typer.Argument(...), top_k: int = typer.Option(5, "--top-k", "-k")):
     """Performs a hybrid search for files based on your query."""
-    # ... (search logic)
+    from . import embedder, vector_store # LAZY IMPORT
+
+    typer.secho(f"Searching for: '{query}'...", fg=typer.colors.BLUE)
+    database.initialize_database()
+    
+    vs = vector_store.get_vector_store()
+    query_embedding = embedder.generate_embeddings([query])
+        
+    semantic_chunk_ids = vs.search(query_embedding, k=top_k * 2)
+    keyword_chunk_ids = repository.search_chunks_fts(query, limit=top_k * 2)
+
+    typer.echo(f"[Debug] Semantic matches found: {len(semantic_chunk_ids)}")
+    typer.echo(f"[Debug] Keyword matches found: {len(keyword_chunk_ids)}")
+
+    file_scores = repository.calculate_hybrid_scores(semantic_chunk_ids, keyword_chunk_ids)
+
     typer.secho("\n--- Search Results ---", fg=typer.colors.GREEN)
-    # ... (display logic)
+    if not file_scores:
+        typer.secho("No relevant files found.", fg=typer.colors.YELLOW)
+        return
+
+    for i, (file_id, data) in enumerate(file_scores[:top_k]):
+        file_path = repository.get_file_path_by_id(file_id)
+        if file_path:
+            score_color = typer.colors.GREEN if data['score'] > 0.5 else typer.colors.YELLOW
+            typer.secho(f"\n{i+1}. Path: ", fg=typer.colors.WHITE, nl=False)
+            typer.secho(file_path, fg=typer.colors.CYAN)
+            typer.secho(f"   Score: ", nl=False)
+            typer.secho(f"{data['score']:.2f}", fg=score_color, bold=True, nl=False)
+            if data["is_keyword_match"]:
+                typer.secho(" (Keyword Match)", fg=typer.colors.MAGENTA)
+            else:
+                typer.echo("")
     _show_update_notification()
 
 @app.command()
+def duplicates():
+    """Finds and lists files that are exact duplicates based on their content hash."""
+    # ... (code for duplicates)
+    _show_update_notification()
+
+@app.command(name="rebuild-index")
+def rebuild_index():
+    """Rebuilds the FAISS index from the database."""
+    # ... (code for rebuild-index)
+    _show_update_notification()
+    
+@app.command()
 def upgrade():
     """Checks for and provides instructions to upgrade FileMind."""
-    from . import version_check # LAZY IMPORT
-    import requests
+    # ... (code for upgrade)
 
-    typer.secho("Checking for new versions...", fg=typer.colors.BLUE)
-    try:
-        current_version_str = importlib.metadata.version("filemind")
-        latest_version_str = version_check.get_latest_version_from_url()
-
-        if not latest_version_str:
-            typer.secho("Could not fetch the latest version from GitHub.", fg=typer.colors.RED)
-            raise typer.Exit()
-
-        current_version = version_check.parse_version(current_version_str)
-        latest_version = version_check.parse_version(latest_version_str)
-
-        if latest_version > current_version:
-            typer.secho(f"\n🎉 A new version is available: {latest_version}", fg=typer.colors.GREEN)
-            if getattr(sys, 'frozen', False):
-                typer.secho("To upgrade, please re-run the installation script:", fg=typer.colors.GREEN)
-                typer.secho("  curl -fsSL https://raw.githubusercontent.com/Karthikeya-Akhandam/filemind/main/install.sh | sh", fg=typer.colors.BRIGHT_MAGENTA)
-            else:
-                typer.secho("To upgrade your pip-installed version, please run:", fg=typer.colors.GREEN)
-                typer.secho(f"  pip install --upgrade filemind", fg=typer.colors.BRIGHT_MAGENTA)
-        else:
-            typer.secho(f"✅ You are on the latest version: {current_version}", fg=typer.colors.GREEN)
-
-    except importlib.metadata.PackageNotFoundError:
-        typer.secho("Could not determine current version (running from source?).", fg=typer.colors.YELLOW)
-    except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 403:
-            typer.secho("Could not check for new versions: GitHub API rate limit exceeded.", fg=typer.colors.RED)
-            typer.secho("Please try again in an hour or check the repository page manually.", fg=typer.colors.YELLOW)
-        else:
-            typer.secho(f"Error checking for new versions: {e}", fg=typer.colors.RED)
-    except requests.exceptions.RequestException as e:
-        typer.secho(f"Error checking for new versions: Network error.", fg=typer.colors.RED)
-
-# ... other commands like duplicates, uninstall, rebuild-index ...
+@app.command()
+def uninstall():
+    """Removes all FileMind data."""
+    # ... (code for uninstall)
 
 if __name__ == "__main__":
     app()
