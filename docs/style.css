@@ -1,26 +1,38 @@
 :root {
-    --primary-color: #e66b44; /* Reddish-orange from logo */
-    --background-color: #1a1a1a;
-    --surface-color: #2a2a2a;
+    --primary-color: #e66b44;
+    --primary-hover: #d95a33;
+    --background-color: #121212; /* Slightly darker background */
+    --surface-color: #1e1e1e; /* Slightly darker surface */
     --text-color: #f0f0f0;
     --subtle-text-color: #a0a0a0;
-    --border-color: #444;
+    --border-color: #383838; /* Darker border */
     --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --transition-speed: 0.3s;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
 }
 
 body {
     font-family: var(--font-family);
-    line-height: 1.6;
+    line-height: 1.7; /* Slightly increased line height */
     color: var(--text-color);
-    margin: 0;
-    padding: 0;
     background-color: var(--background-color);
+    -webkit-font-smoothing: antialiased; /* Smoother fonts */
+    -moz-osx-font-smoothing: grayscale; /* Smoother fonts for Firefox on macOS */
 }
 
 .container {
-    max-width: 1100px;
+    max-width: 1200px; /* Slightly wider container */
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 25px; /* Increased horizontal padding */
 }
 
 /* Header */
@@ -31,6 +43,8 @@ header {
     position: sticky;
     top: 0;
     z-index: 1000;
+    backdrop-filter: blur(10px);
+    background: rgba(42, 42, 42, 0.95);
 }
 
 header .container {
@@ -42,77 +56,241 @@ header .container {
 header .logo {
     display: flex;
     align-items: center;
+    gap: 15px;
 }
 
 header .logo img {
     height: 40px;
-    margin-right: 15px;
-    border-radius: 50%; /* Make the logo circular */
+    border-radius: 50%;
+    transition: transform var(--transition-speed) ease;
+}
+
+header .logo img:hover {
+    transform: scale(1.05);
 }
 
 header h1 {
     font-size: 1.5rem;
     margin: 0;
     color: var(--text-color);
+    font-weight: 600;
+}
+
+header nav {
+    display: flex;
+    gap: 25px;
 }
 
 header nav a {
     color: var(--subtle-text-color);
     text-decoration: none;
-    margin-left: 20px;
     font-weight: 500;
-    transition: color 0.3s ease;
+    transition: color var(--transition-speed) ease;
+    position: relative;
+}
+
+header nav a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -5px;
+    left: 0;
+    background-color: var(--primary-color);
+    transition: width var(--transition-speed) ease;
 }
 
 header nav a:hover {
     color: var(--primary-color);
 }
 
+header nav a:hover::after {
+    width: 100%;
+}
+
 /* Hero Section */
 .hero {
-    background-color: var(--background-color);
-    padding: 5rem 0;
+    background: linear-gradient(135deg, var(--background-color) 0%, #252525 100%);
+    padding: 8rem 0;
     text-align: center;
+    position: relative;
+    overflow: hidden;
+    min-height: 600px;
+    display: flex;
+    align-items: center;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(230, 107, 68, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.hero .container {
+    position: relative;
+    z-index: 2;
+}
+
+.brain-background {
+    position: absolute;
+    width: 900px;
+    height: 900px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    opacity: 0.3;
+    animation: floatAnimation 8s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes floatAnimation {
+    0%, 100% {
+        transform: translate(-50%, -50%) translateY(0px);
+    }
+    50% {
+        transform: translate(-50%, -50%) translateY(-20px);
+    }
+}
+
+.connection {
+    stroke: var(--primary-color);
+    stroke-width: 3;
+    opacity: 0.35;
+    stroke-linecap: round;
+    animation: flowAnimation 3s ease-in-out infinite;
+}
+
+.connection:nth-child(2n) {
+    animation-delay: 0.5s;
+}
+
+.connection:nth-child(3n) {
+    animation-delay: 1s;
+}
+
+.connection:nth-child(4n) {
+    animation-delay: 1.5s;
+}
+
+@keyframes flowAnimation {
+    0%, 100% {
+        opacity: 0.25;
+        stroke-width: 2.5;
+    }
+    50% {
+        opacity: 0.5;
+        stroke-width: 3.5;
+    }
+}
+
+.node {
+    fill: var(--primary-color);
+    animation: nodePulse 3s ease-in-out infinite;
+}
+
+.node-large {
+    r: 8;
+}
+
+.node:nth-child(2n) {
+    animation-delay: 0.3s;
+}
+
+.node:nth-child(3n) {
+    animation-delay: 0.6s;
+}
+
+.node:nth-child(4n) {
+    animation-delay: 0.9s;
+}
+
+.node:nth-child(5n) {
+    animation-delay: 1.2s;
+}
+
+@keyframes nodePulse {
+    0%, 100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    animation: fadeInUp 0.8s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .hero h2 {
-    font-size: 2.8rem;
-    margin-bottom: 1rem;
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--text-color) 0%, var(--primary-color) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .hero p {
     font-size: 1.2rem;
-    max-width: 600px;
-    margin: 0 auto 2rem auto;
+    max-width: 650px;
+    margin: 0 auto 2.5rem auto;
     color: var(--subtle-text-color);
+    line-height: 1.8;
 }
 
 .cta-button {
-    background-color: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
     color: #fff;
-    padding: 14px 30px;
-    border-radius: 5px;
+    padding: 16px 40px;
+    border-radius: 8px;
     text-decoration: none;
-    font-weight: bold;
-    transition: transform 0.2s ease, background-color 0.3s ease;
+    font-weight: 600;
+    font-size: 1.05rem;
+    transition: all var(--transition-speed) ease;
     display: inline-block;
+    box-shadow: 0 4px 15px rgba(230, 107, 68, 0.3);
 }
 
 .cta-button:hover {
-    background-color: #d95a33;
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 25px rgba(230, 107, 68, 0.4);
+}
+
+.cta-button:active {
+    transform: translateY(-1px);
 }
 
 /* Features Section */
 .features {
-    padding: 4rem 0;
+    padding: 5rem 0;
     background-color: var(--surface-color);
 }
 
 .features h2 {
     text-align: center;
-    font-size: 2.2rem;
-    margin-bottom: 3rem;
+    font-size: 2.5rem;
+    margin-bottom: 3.5rem;
+    font-weight: 700;
 }
 
 .feature-grid {
@@ -124,80 +302,171 @@ header nav a:hover {
 .feature-item {
     background: var(--background-color);
     border: 1px solid var(--border-color);
-    padding: 2rem;
-    border-radius: 8px;
+    padding: 2.5rem;
+    border-radius: 12px;
+    transition: all var(--transition-speed) ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.feature-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
+    transform: scaleX(0);
+    transition: transform var(--transition-speed) ease;
+}
+
+.feature-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    border-color: var(--primary-color);
+}
+
+.feature-item:hover::before {
+    transform: scaleX(1);
+}
+
+.feature-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: inline-block;
+    transition: transform var(--transition-speed) ease;
+}
+
+.feature-item:hover .feature-icon {
+    transform: scale(1.1) rotate(5deg);
 }
 
 .feature-item h3 {
     font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
     color: var(--primary-color);
+    font-weight: 600;
+}
+
+.feature-item p {
+    color: var(--subtle-text-color);
+    line-height: 1.7;
 }
 
 /* Download Section */
 .download {
-    background-color: var(--background-color);
-    padding: 4rem 0;
+    background: linear-gradient(135deg, var(--background-color) 0%, #1f1f1f 100%);
+    padding: 5rem 0;
     text-align: center;
 }
 
 .download h2 {
-    font-size: 2.2rem;
-    margin-bottom: 1rem;
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
 }
 
-.download p {
+.version-info {
     font-size: 1.1rem;
     color: var(--subtle-text-color);
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
 }
 
 .download #version-display {
-    font-weight: bold;
+    font-weight: 700;
     color: var(--primary-color);
+    font-size: 1.15rem;
 }
 
 .download-buttons {
     display: flex;
     justify-content: center;
-    gap: 1rem;
+    gap: 1.5rem;
     flex-wrap: wrap;
-    margin-bottom: 2rem;
+    margin-bottom: 3rem;
 }
 
 .download .button {
-    background-color: var(--primary-color);
-    color: #fff;
-    padding: 12px 25px;
-    border-radius: 5px;
+    background: var(--surface-color);
+    color: var(--text-color);
+    padding: 14px 28px;
+    border-radius: 8px;
     text-decoration: none;
-    font-weight: 500;
-    transition: background-color 0.3s ease;
+    font-weight: 600;
+    transition: all var(--transition-speed) ease;
+    border: 2px solid var(--border-color);
+    display: inline-block;
 }
 
 .download .button:hover {
-    background-color: #d95a33;
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 20px rgba(230, 107, 68, 0.3);
 }
 
 .install-script {
-    margin-top: 2rem;
+    margin-top: 3rem;
+}
+
+.install-script > p {
+    color: var(--subtle-text-color);
+    margin-bottom: 1rem;
+    font-size: 1.05rem;
+}
+
+.code-container {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    max-width: 700px;
 }
 
 .install-script pre {
     background-color: var(--surface-color);
     color: var(--text-color);
-    padding: 1rem;
-    border-radius: 5px;
-    display: inline-block;
+    padding: 1.5rem 3rem 1.5rem 1.5rem;
+    border-radius: 8px;
     border: 1px solid var(--border-color);
     text-align: left;
-    white-space: pre-wrap;
-    word-break: break-all;
+    white-space: nowrap;
+    overflow-x: auto;
+    margin: 0;
+    transition: border-color var(--transition-speed) ease;
+}
+
+.install-script pre:hover {
+    border-color: var(--primary-color);
 }
 
 .install-script code {
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
-    font-size: 0.9rem;
+    font-size: 1rem;
+}
+
+.copy-button {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--primary-color);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all var(--transition-speed) ease;
+}
+
+.copy-button:hover {
+    background: var(--primary-hover);
+    transform: scale(1.05);
+}
+
+.copy-button.copied {
+    background: #4caf50;
 }
 
 /* Footer */
@@ -205,16 +474,105 @@ footer {
     background-color: var(--surface-color);
     color: var(--subtle-text-color);
     text-align: center;
-    padding: 2rem 0;
-    font-size: 0.9rem;
+    padding: 2.5rem 0;
+    font-size: 0.95rem;
     border-top: 1px solid var(--border-color);
+}
+
+footer p {
+    margin: 0.5rem 0;
 }
 
 footer a {
     color: var(--primary-color);
     text-decoration: none;
+    transition: color var(--transition-speed) ease;
 }
 
 footer a:hover {
+    color: var(--primary-hover);
     text-decoration: underline;
 }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .brain-background {
+        width: 700px;
+        height: 700px;
+    }
+
+    .hero {
+        min-height: 500px;
+        padding: 6rem 0;
+    }
+
+    .hero h2 {
+        font-size: 2.2rem;
+    }
+
+    .hero p {
+        font-size: 1.1rem;
+    }
+
+    .features h2,
+    .download h2 {
+        font-size: 2rem;
+    }
+
+    .feature-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .download-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .download .button {
+        width: 100%;
+        max-width: 300px;
+        justify-content: center;
+    }
+
+    header nav {
+        gap: 15px;
+    }
+
+    header nav a {
+        font-size: 0.9rem;
+    }
+
+    .install-script pre {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .brain-background {
+        width: 500px;
+        height: 500px;
+    }
+
+    .hero {
+        padding: 4rem 0;
+        min-height: 450px;
+    }
+
+    .hero h2 {
+        font-size: 1.8rem;
+    }
+
+    .features,
+    .download {
+        padding: 3rem 0;
+    }
+
+    .feature-item {
+        padding: 1.5rem;
+    }
+
+    .install-script pre {
+        font-size: 0.75rem;
+        padding: 1rem 2.5rem 1rem 1rem;
+    }
+}   
