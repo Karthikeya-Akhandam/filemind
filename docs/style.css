@@ -37,14 +37,14 @@ body {
 
 /* Header */
 header {
-    background: var(--surface-color);
+    background: rgba(30, 30, 30, 0.98); /* Use surface-color with transparency */
     padding: 1rem 0;
     border-bottom: 1px solid var(--border-color);
     position: sticky;
     top: 0;
     z-index: 1000;
     backdrop-filter: blur(10px);
-    background: rgba(42, 42, 42, 0.95);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); /* Added subtle shadow */
 }
 
 header .container {
@@ -56,21 +56,22 @@ header .container {
 header .logo {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px; /* Slightly reduced gap */
 }
 
 header .logo img {
-    height: 40px;
+    height: 38px; /* Slightly smaller logo */
+    width: 38px;
     border-radius: 50%;
     transition: transform var(--transition-speed) ease;
 }
 
 header .logo img:hover {
-    transform: scale(1.05);
+    transform: scale(1.1); /* Slightly more prominent hover */
 }
 
 header h1 {
-    font-size: 1.5rem;
+    font-size: 1.4rem; /* Slightly smaller h1 */
     margin: 0;
     color: var(--text-color);
     font-weight: 600;
@@ -78,15 +79,16 @@ header h1 {
 
 header nav {
     display: flex;
-    gap: 25px;
+    gap: 20px; /* Adjusted gap */
 }
 
 header nav a {
     color: var(--subtle-text-color);
     text-decoration: none;
     font-weight: 500;
-    transition: color var(--transition-speed) ease;
+    transition: color var(--transition-speed) ease, transform var(--transition-speed) ease; /* Added transform transition */
     position: relative;
+    padding: 5px 0; /* Added padding for better hover area */
 }
 
 header nav a::after {
@@ -94,7 +96,7 @@ header nav a::after {
     position: absolute;
     width: 0;
     height: 2px;
-    bottom: -5px;
+    bottom: 0px; /* Adjusted position */
     left: 0;
     background-color: var(--primary-color);
     transition: width var(--transition-speed) ease;
@@ -102,6 +104,7 @@ header nav a::after {
 
 header nav a:hover {
     color: var(--primary-color);
+    transform: translateY(-2px); /* Subtle hover effect */
 }
 
 header nav a:hover::after {
@@ -110,14 +113,15 @@ header nav a:hover::after {
 
 /* Hero Section */
 .hero {
-    background: linear-gradient(135deg, var(--background-color) 0%, #252525 100%);
-    padding: 8rem 0;
+    background: linear-gradient(135deg, var(--background-color) 0%, #171717 100%); /* Adjusted gradient */
+    padding: 9rem 0; /* Increased padding */
     text-align: center;
     position: relative;
     overflow: hidden;
-    min-height: 600px;
+    min-height: 650px; /* Increased min-height */
     display: flex;
     align-items: center;
+    justify-content: center; /* Center content vertically */
 }
 
 .hero::before {
@@ -127,7 +131,7 @@ header nav a:hover::after {
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at 50% 50%, rgba(230, 107, 68, 0.08) 0%, transparent 70%);
+    background: radial-gradient(circle at 50% 50%, rgba(230, 107, 68, 0.12) 0%, transparent 70%); /* Stronger radial gradient */
     pointer-events: none;
 }
 
@@ -138,101 +142,103 @@ header nav a:hover::after {
 
 .brain-background {
     position: absolute;
-    width: 900px;
-    height: 900px;
+    width: 950px; /* Slightly larger */
+    height: 950px;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 1;
-    opacity: 0.3;
-    animation: floatAnimation 8s ease-in-out infinite;
+    opacity: 0.25; /* Slightly less opaque */
+    animation: floatAnimation 10s ease-in-out infinite; /* Slower animation */
     pointer-events: none;
 }
 
 @keyframes floatAnimation {
     0%, 100% {
-        transform: translate(-50%, -50%) translateY(0px);
+        transform: translate(-50%, -50%) translateY(0px) rotate(0deg); /* Added rotate */
     }
     50% {
-        transform: translate(-50%, -50%) translateY(-20px);
+        transform: translate(-50%, -50%) translateY(-25px) rotate(2deg); /* Added rotate and increased translateY */
     }
 }
 
 .connection {
     stroke: var(--primary-color);
-    stroke-width: 3;
-    opacity: 0.35;
+    stroke-width: 2.5; /* Adjusted stroke width */
+    opacity: 0.3; /* Adjusted opacity */
     stroke-linecap: round;
-    animation: flowAnimation 3s ease-in-out infinite;
+    animation: flowAnimation 4s ease-in-out infinite alternate; /* Slower, alternate animation */
 }
 
 .connection:nth-child(2n) {
-    animation-delay: 0.5s;
+    animation-delay: 0.7s;
 }
 
 .connection:nth-child(3n) {
-    animation-delay: 1s;
+    animation-delay: 1.4s;
 }
 
 .connection:nth-child(4n) {
-    animation-delay: 1.5s;
+    animation-delay: 2.1s;
 }
 
 @keyframes flowAnimation {
     0%, 100% {
-        opacity: 0.25;
-        stroke-width: 2.5;
+        opacity: 0.2;
+        stroke-width: 2;
     }
     50% {
-        opacity: 0.5;
-        stroke-width: 3.5;
+        opacity: 0.4;
+        stroke-width: 3;
     }
 }
 
 .node {
     fill: var(--primary-color);
-    animation: nodePulse 3s ease-in-out infinite;
+    animation: nodePulse 4s ease-in-out infinite; /* Slower animation */
 }
 
 .node-large {
-    r: 8;
+    r: 9; /* Slightly larger node */
 }
 
 .node:nth-child(2n) {
-    animation-delay: 0.3s;
+    animation-delay: 0.4s;
 }
 
 .node:nth-child(3n) {
-    animation-delay: 0.6s;
+    animation-delay: 0.8s;
 }
 
 .node:nth-child(4n) {
-    animation-delay: 0.9s;
+    animation-delay: 1.2s;
 }
 
 .node:nth-child(5n) {
-    animation-delay: 1.2s;
+    animation-delay: 1.6s;
 }
 
 @keyframes nodePulse {
     0%, 100% {
-        opacity: 0.6;
+        opacity: 0.5;
+        transform: scale(1);
     }
     50% {
-        opacity: 1;
+        opacity: 0.9;
+        transform: scale(1.1); /* Subtle pulse effect */
     }
 }
 
 .hero-content {
     position: relative;
     z-index: 2;
-    animation: fadeInUp 0.8s ease-out;
+    animation: fadeInUp 1s ease-out; /* Slower animation */
 }
 
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateY(40px); /* Increased translateY */
     }
     to {
         opacity: 1;
@@ -241,8 +247,8 @@ header nav a:hover::after {
 }
 
 .hero h2 {
-    font-size: 3rem;
-    margin-bottom: 1.5rem;
+    font-size: 3.2rem; /* Slightly larger */
+    margin-bottom: 1.2rem; /* Adjusted margin */
     font-weight: 700;
     background: linear-gradient(135deg, var(--text-color) 0%, var(--primary-color) 100%);
     -webkit-background-clip: text;
@@ -251,58 +257,59 @@ header nav a:hover::after {
 }
 
 .hero p {
-    font-size: 1.2rem;
-    max-width: 650px;
-    margin: 0 auto 2.5rem auto;
+    font-size: 1.15rem; /* Slightly smaller */
+    max-width: 700px; /* Wider max-width */
+    margin: 0 auto 2.8rem auto; /* Adjusted margin */
     color: var(--subtle-text-color);
-    line-height: 1.8;
+    line-height: 1.85; /* Increased line height */
 }
 
 .cta-button {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
     color: #fff;
-    padding: 16px 40px;
+    padding: 15px 35px; /* Adjusted padding */
     border-radius: 8px;
     text-decoration: none;
     font-weight: 600;
-    font-size: 1.05rem;
+    font-size: 1rem; /* Adjusted font size */
     transition: all var(--transition-speed) ease;
     display: inline-block;
-    box-shadow: 0 4px 15px rgba(230, 107, 68, 0.3);
+    box-shadow: 0 5px 20px rgba(230, 107, 68, 0.4); /* Stronger shadow */
+    outline: none; /* Removed outline */
 }
 
 .cta-button:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 25px rgba(230, 107, 68, 0.4);
+    transform: translateY(-4px); /* Increased translateY */
+    box-shadow: 0 8px 30px rgba(230, 107, 68, 0.5); /* Stronger shadow */
 }
 
 .cta-button:active {
-    transform: translateY(-1px);
+    transform: translateY(-2px); /* Adjusted translateY */
 }
 
 /* Features Section */
 .features {
-    padding: 5rem 0;
+    padding: 6rem 0; /* Increased padding */
     background-color: var(--surface-color);
 }
 
 .features h2 {
     text-align: center;
-    font-size: 2.5rem;
-    margin-bottom: 3.5rem;
+    font-size: 2.8rem; /* Slightly larger */
+    margin-bottom: 4rem; /* Increased margin */
     font-weight: 700;
 }
 
 .feature-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Adjusted minmax for better fit */
+    gap: 2.5rem; /* Increased gap */
 }
 
 .feature-item {
     background: var(--background-color);
     border: 1px solid var(--border-color);
-    padding: 2.5rem;
+    padding: 2.8rem; /* Increased padding */
     border-radius: 12px;
     transition: all var(--transition-speed) ease;
     position: relative;
@@ -322,8 +329,8 @@ header nav a:hover::after {
 }
 
 .feature-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    transform: translateY(-7px); /* Increased translateY */
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4); /* Stronger shadow */
     border-color: var(--primary-color);
 }
 
@@ -332,87 +339,88 @@ header nav a:hover::after {
 }
 
 .feature-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
+    font-size: 3.5rem; /* Larger icon */
+    margin-bottom: 1.2rem; /* Adjusted margin */
     display: inline-block;
     transition: transform var(--transition-speed) ease;
 }
 
 .feature-item:hover .feature-icon {
-    transform: scale(1.1) rotate(5deg);
+    transform: scale(1.15) rotate(7deg); /* Stronger hover effect */
 }
 
 .feature-item h3 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
+    font-size: 1.6rem; /* Slightly larger */
+    margin-bottom: 0.9rem; /* Adjusted margin */
     color: var(--primary-color);
     font-weight: 600;
 }
 
 .feature-item p {
     color: var(--subtle-text-color);
-    line-height: 1.7;
+    line-height: 1.8; /* Increased line height */
 }
 
 /* Download Section */
 .download {
-    background: linear-gradient(135deg, var(--background-color) 0%, #1f1f1f 100%);
-    padding: 5rem 0;
+    background: linear-gradient(135deg, var(--background-color) 0%, #171717 100%); /* Adjusted gradient */
+    padding: 6rem 0; /* Increased padding */
     text-align: center;
 }
 
 .download h2 {
-    font-size: 2.5rem;
-    margin-bottom: 1.5rem;
+    font-size: 2.8rem; /* Slightly larger */
+    margin-bottom: 1.8rem; /* Adjusted margin */
     font-weight: 700;
 }
 
 .version-info {
     font-size: 1.1rem;
     color: var(--subtle-text-color);
-    margin-bottom: 2.5rem;
+    margin-bottom: 2.8rem; /* Adjusted margin */
 }
 
 .download #version-display {
     font-weight: 700;
     color: var(--primary-color);
-    font-size: 1.15rem;
+    font-size: 1.2rem; /* Slightly larger */
 }
 
 .download-buttons {
     display: flex;
     justify-content: center;
-    gap: 1.5rem;
+    gap: 1.8rem; /* Increased gap */
     flex-wrap: wrap;
-    margin-bottom: 3rem;
+    margin-bottom: 3.5rem; /* Increased margin */
 }
 
 .download .button {
     background: var(--surface-color);
     color: var(--text-color);
-    padding: 14px 28px;
+    padding: 15px 30px; /* Adjusted padding */
     border-radius: 8px;
     text-decoration: none;
     font-weight: 600;
     transition: all var(--transition-speed) ease;
     border: 2px solid var(--border-color);
     display: inline-block;
+    outline: none; /* Removed outline */
 }
 
 .download .button:hover {
     background: var(--primary-color);
     border-color: var(--primary-color);
-    transform: translateY(-3px);
-    box-shadow: 0 5px 20px rgba(230, 107, 68, 0.3);
+    transform: translateY(-4px); /* Stronger hover effect */
+    box-shadow: 0 6px 25px rgba(230, 107, 68, 0.4); /* Stronger shadow */
 }
 
 .install-script {
-    margin-top: 3rem;
+    margin-top: 3.5rem; /* Increased margin */
 }
 
 .install-script > p {
     color: var(--subtle-text-color);
-    margin-bottom: 1rem;
+    margin-bottom: 1.2rem; /* Adjusted margin */
     font-size: 1.05rem;
 }
 
@@ -420,13 +428,13 @@ header nav a:hover::after {
     position: relative;
     display: inline-block;
     width: 100%;
-    max-width: 700px;
+    max-width: 750px; /* Wider max-width */
 }
 
 .install-script pre {
     background-color: var(--surface-color);
     color: var(--text-color);
-    padding: 1.5rem 3rem 1.5rem 1.5rem;
+    padding: 1.6rem 3.2rem 1.6rem 1.6rem; /* Adjusted padding */
     border-radius: 8px;
     border: 1px solid var(--border-color);
     text-align: left;
@@ -442,13 +450,13 @@ header nav a:hover::after {
 
 .install-script code {
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
-    font-size: 1rem;
+    font-size: 0.95rem; /* Slightly smaller */
 }
 
 .copy-button {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: 15px; /* Adjusted position */
+    right: 15px; /* Adjusted position */
     background: var(--primary-color);
     color: #fff;
     border: none;
@@ -456,13 +464,14 @@ header nav a:hover::after {
     border-radius: 5px;
     cursor: pointer;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.8rem; /* Slightly smaller */
     transition: all var(--transition-speed) ease;
+    outline: none; /* Removed outline */
 }
 
 .copy-button:hover {
     background: var(--primary-hover);
-    transform: scale(1.05);
+    transform: scale(1.08); /* Stronger scale effect */
 }
 
 .copy-button.copied {
@@ -474,13 +483,13 @@ footer {
     background-color: var(--surface-color);
     color: var(--subtle-text-color);
     text-align: center;
-    padding: 2.5rem 0;
-    font-size: 0.95rem;
+    padding: 2.8rem 0; /* Increased padding */
+    font-size: 0.9rem; /* Slightly smaller */
     border-top: 1px solid var(--border-color);
 }
 
 footer p {
-    margin: 0.5rem 0;
+    margin: 0.6rem 0; /* Adjusted margin */
 }
 
 footer a {
@@ -495,43 +504,96 @@ footer a:hover {
 }
 
 /* Responsive Design */
+@media (max-width: 1200px) {
+    .container {
+        padding: 0 20px;
+    }
+}
+
+@media (max-width: 992px) {
+    .hero h2 {
+        font-size: 2.8rem;
+    }
+    .hero p {
+        font-size: 1.1rem;
+    }
+    .features h2, .download h2 {
+        font-size: 2.4rem;
+    }
+    .feature-item {
+        padding: 2.2rem;
+    }
+    .feature-icon {
+        font-size: 3rem;
+    }
+    .feature-item h3 {
+        font-size: 1.4rem;
+    }
+    .brain-background {
+        width: 800px;
+        height: 800px;
+    }
+}
+
+
 @media (max-width: 768px) {
     .brain-background {
-        width: 700px;
-        height: 700px;
+        width: 650px; /* Adjusted */
+        height: 650px; /* Adjusted */
+        opacity: 0.2;
     }
 
     .hero {
-        min-height: 500px;
-        padding: 6rem 0;
+        min-height: 550px; /* Adjusted */
+        padding: 7rem 0; /* Adjusted */
     }
 
     .hero h2 {
-        font-size: 2.2rem;
+        font-size: 2.4rem; /* Adjusted */
+        margin-bottom: 1rem;
     }
 
     .hero p {
-        font-size: 1.1rem;
+        font-size: 1rem; /* Adjusted */
+        max-width: 90%;
+        margin-bottom: 2rem;
+    }
+
+    .cta-button {
+        padding: 14px 30px;
+        font-size: 0.95rem;
     }
 
     .features h2,
     .download h2 {
-        font-size: 2rem;
+        font-size: 2.2rem; /* Adjusted */
+        margin-bottom: 3rem;
     }
 
     .feature-grid {
         grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .feature-item {
+        padding: 2rem; /* Adjusted */
+    }
+    .feature-icon {
+        font-size: 3rem;
     }
 
     .download-buttons {
         flex-direction: column;
         align-items: center;
+        gap: 1rem;
+        margin-bottom: 2.5rem;
     }
 
     .download .button {
         width: 100%;
-        max-width: 300px;
-        justify-content: center;
+        max-width: 280px; /* Adjusted max-width */
+        font-size: 0.95rem;
+        padding: 12px 25px;
     }
 
     header nav {
@@ -539,11 +601,18 @@ footer a:hover {
     }
 
     header nav a {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
     }
 
     .install-script pre {
-        font-size: 0.85rem;
+        font-size: 0.8rem; /* Adjusted */
+        padding: 1.2rem 2.8rem 1.2rem 1.2rem; /* Adjusted */
+    }
+    .copy-button {
+        top: 10px;
+        right: 10px;
+        padding: 6px 12px;
+        font-size: 0.75rem;
     }
 }
 
@@ -551,20 +620,21 @@ footer a:hover {
     .brain-background {
         width: 500px;
         height: 500px;
+        opacity: 0.15;
     }
 
     .hero {
-        padding: 4rem 0;
-        min-height: 450px;
+        padding: 5rem 0;
+        min-height: 480px;
     }
 
     .hero h2 {
-        font-size: 1.8rem;
+        font-size: 2rem;
     }
 
-    .features,
-    .download {
-        padding: 3rem 0;
+    .features h2,
+    .download h2 {
+        font-size: 1.8rem;
     }
 
     .feature-item {
@@ -572,7 +642,27 @@ footer a:hover {
     }
 
     .install-script pre {
-        font-size: 0.75rem;
-        padding: 1rem 2.5rem 1rem 1rem;
+        font-size: 0.7rem;
+        padding: 0.8rem 2rem 0.8rem 0.8rem;
     }
-}   
+    .copy-button {
+        top: 8px;
+        right: 8px;
+        padding: 5px 10px;
+        font-size: 0.7rem;
+    }
+
+    header h1 {
+        font-size: 1.2rem;
+    }
+    header .logo img {
+        height: 30px;
+        width: 30px;
+    }
+    header nav {
+        gap: 10px;
+    }
+    header nav a {
+        font-size: 0.8rem;
+    }
+}
