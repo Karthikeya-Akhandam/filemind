@@ -58,6 +58,7 @@ jobs:
 
       - name: Build standalone binary with PyInstaller
         id: build_pyinstaller
+        shell: bash
         run: |
           VERSION_TAG=${{ github.ref_name }} # e.g., v0.1.1
 
