@@ -163,7 +163,41 @@ def get_all_chunks_ordered() -> List[Tuple[int, str]]:
     """
     conn = database.get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, content FROM chunks ORDER BY id ASC")
     results = cursor.fetchall()
     conn.close()
     return results
+
+def calculate_hybrid_scores(semantic_results: Tuple, keyword_chunk_ids: List[int]) -> List[Tuple[int, dict]]:
+    """
+    Calculates hybrid scores for files based on semantic and keyword search results.
+    """
+    from collections import defaultdict
+
+    distances, semantic_chunk_ids_flat = semantic_results
+    
+    file_scores = defaultdict(lambda: {"score": 0.0, "is_keyword_match": False})
+
+    # Process semantic search results
+    if semantic_chunk_ids_flat.size > 0:
+        # FAISS returns 0-based indices, our DB is 1-based
+        semantic_db_ids = (semantic_chunk_ids_flat + 1).tolist()
+        chunk_details = get_chunk_details_by_ids(semantic_db_ids)
+        
+        for i, (chunk_id, file_id, _) in enumerate(chunk_details):
+            score = float(distances[i])
+            if score > file_scores[file_id]["score"]:
+                file_scores[file_id]["score"] = score
+
+    # Process keyword search results and apply boost
+    if keyword_chunk_ids:
+        chunk_details = get_chunk_details_by_ids(keyword_chunk_ids)
+        for _, file_id, _ in chunk_details:
+            if file_id in file_scores:
+                file_scores[file_id]["is_keyword_match"] = True
+                file_scores[file_id]["score"] += 0.1 # Apply boost
+
+    # Sort files by final score
+    sorted_files = sorted(file_scores.items(), key=lambda item: item[1]["score"], reverse=True)
+    
+    return sorted_files
+

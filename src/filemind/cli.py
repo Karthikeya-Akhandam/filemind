@@ -164,13 +164,13 @@ def search(query: str = typer.Argument(...), top_k: int = typer.Option(5, "--top
     vs = vector_store.get_vector_store()
     query_embedding = embedder.generate_embeddings([query])
         
-    semantic_chunk_ids = vs.search(query_embedding, k=top_k * 2)
+    semantic_results = vs.search(query_embedding, k=top_k * 2)
     keyword_chunk_ids = repository.search_chunks_fts(query, limit=top_k * 2)
 
-    typer.echo(f"[Debug] Semantic matches found: {len(semantic_chunk_ids)}")
+    typer.echo(f"[Debug] Semantic matches found: {len(semantic_results[0])}")
     typer.echo(f"[Debug] Keyword matches found: {len(keyword_chunk_ids)}")
 
-    file_scores = repository.calculate_hybrid_scores(semantic_chunk_ids, keyword_chunk_ids)
+    file_scores = repository.calculate_hybrid_scores(semantic_results, keyword_chunk_ids)
 
     typer.secho("\n--- Search Results ---", fg=typer.colors.GREEN)
     if not file_scores:
