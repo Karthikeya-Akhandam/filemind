@@ -36,7 +36,8 @@ dependencies = [
     "onnxruntime",
     "faiss-cpu",
     "numpy",
-    "tokenizers"
+    "tokenizers",
+    "requests"
 ]
 
 [project.optional-dependencies]

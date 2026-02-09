@@ -319,18 +319,39 @@ def search(query: str = typer.Argument(..., help="The text to search for."), top
 
 @app.command()
 def upgrade():
-    """
-    Provides instructions on how to upgrade FileMind to the latest version.
-    """
-    typer.secho("Fetching upgrade instructions...", fg=typer.colors.BLUE)
-    
-    # This check determines if the app is a standalone binary
-    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        typer.secho("\nTo upgrade this standalone application, please re-run the installation script:", fg=typer.colors.GREEN)
-        typer.secho("  curl -fsSL https://raw.githubusercontent.com/Karthikeya-Akhandam/filemind/main/install.sh | sh", fg=typer.colors.BRIGHT_MAGENTA)
+    """Checks for and provides instructions to upgrade FileMind."""
+    # LAZY IMPORT
+    import requests
+    from packaging.version import parse as parse_version
+
+    typer.secho("Checking for new versions...", fg=typer.colors.BLUE)
+
+    try:
+        current_version_str = importlib.metadata.version("filemind")
+        current_version = parse_version(current_version_str)
+    except importlib.metadata.PackageNotFoundError:
+        typer.secho("Could not determine current version (running from source?).", fg=typer.colors.YELLOW)
+        return
+
+    try:
+        response = requests.get("https://api.github.com/repos/Karthikeya-Akhandam/filemind/releases/latest")
+        response.raise_for_status()
+        latest_version_str = response.json()["tag_name"].lstrip('v')
+        latest_version = parse_version(latest_version_str)
+    except Exception as e:
+        typer.secho(f"Error checking for new versions: {e}", fg=typer.colors.RED)
+        return
+
+    if latest_version > current_version:
+        typer.secho(f"\n🎉 A new version is available: {latest_version}", fg=typer.colors.GREEN)
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            typer.secho("To upgrade, please re-run the installation script:", fg=typer.colors.GREEN)
+            typer.secho("  curl -fsSL https://raw.githubusercontent.com/Karthikeya-Akhandam/filemind/main/install.sh | sh", fg=typer.colors.BRIGHT_MAGENTA)
+        else:
+            typer.secho("To upgrade your pip-installed version, please run:", fg=typer.colors.GREEN)
+            typer.secho(f"  pip install --upgrade filemind", fg=typer.colors.BRIGHT_MAGENTA)
     else:
-        typer.secho("\nTo upgrade this pip-installed version, please run:", fg=typer.colors.GREEN)
-        typer.secho("  pip install --upgrade filemind", fg=typer.colors.BRIGHT_MAGENTA)
+        typer.secho(f"✅ You are on the latest version: {current_version}", fg=typer.colors.GREEN)
 
 
 @app.command()
