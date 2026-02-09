@@ -1,8 +1,10 @@
 name: Generate Release Data
 
 on:
-  release:
-    types: [published] # Trigger on a new release being published
+  workflow_run:
+    workflows: ["Build and Release"]
+    types: [completed]
+  workflow_dispatch: # allow manual re-runs
 
 permissions:
   contents: write # To commit the generated releases.json
@@ -10,9 +12,12 @@ permissions:
 jobs:
   generate_release_json:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Fetch and process release data
         id: fetch_data
@@ -39,7 +44,7 @@ jobs:
               ]
             }
           ]')
-          
+
           echo "$GENERATED_JSON" > docs/releases.json
 
       - name: Commit releases.json
@@ -48,4 +53,5 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add docs/releases.json
           git commit -m "docs: Auto-generate releases.json" || echo "No changes to commit"
+          git pull --rebase
           git push

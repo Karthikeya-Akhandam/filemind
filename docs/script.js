@@ -175,7 +175,160 @@ function fetchVersion() {
     });
 }
 
-// Fetch releases.json and upgrade Windows download button to direct asset URL
+// Find a matching asset for a platform
+function findAsset(assets, platform) {
+  if (!assets || assets.length === 0) return null;
+  return assets.find((a) => {
+    const name = a.name.toLowerCase();
+    if (platform === 'windows') return name.endsWith('.exe');
+    if (platform === 'linux') return name.includes('linux');
+    if (platform === 'macos') return name.includes('macos');
+    return false;
+  }) || null;
+}
+
+// Create badge HTML for a release
+function createBadgeHTML(release, isLatestStable) {
+  if (isLatestStable) {
+    return '<span class="release-badge latest">Latest</span>';
+  }
+  if (release.prerelease) {
+    return '<span class="release-badge prerelease">Pre-release</span>';
+  }
+  return '';
+}
+
+// Download icon SVG
+const downloadIconSVG = '<svg class="release-download-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>';
+
+// Populate Windows dropdown
+function populateWindowsDropdown(releases) {
+  const list = document.getElementById('windowsReleaseList');
+  if (!list) return;
+
+  // Find the first non-prerelease for "Latest" badge
+  const latestStableTag = releases.find((r) => !r.prerelease)?.tag_name || null;
+
+  const rows = [];
+  for (const release of releases) {
+    const asset = findAsset(release.assets, 'windows');
+    if (!asset) continue;
+
+    const isLatestStable = release.tag_name === latestStableTag;
+    const badge = createBadgeHTML(release, isLatestStable);
+    const li = document.createElement('li');
+    li.innerHTML = `<a href="${asset.browser_download_url}" class="release-row-link" role="option"><span class="release-version">${release.tag_name}</span>${badge}${downloadIconSVG}</a>`;
+    rows.push(li);
+  }
+
+  if (rows.length === 0) {
+    showEmptyState('windowsReleaseList', 'No Windows releases available');
+    return;
+  }
+
+  list.innerHTML = '';
+  rows.forEach((li) => list.appendChild(li));
+}
+
+// Populate Linux/macOS dropdown
+function populateLinuxMacDropdown(releases) {
+  const list = document.getElementById('linuxMacReleaseList');
+  if (!list) return;
+
+  const latestStableTag = releases.find((r) => !r.prerelease)?.tag_name || null;
+
+  const rows = [];
+  for (const release of releases) {
+    const linuxAsset = findAsset(release.assets, 'linux');
+    const macAsset = findAsset(release.assets, 'macos');
+
+    // Skip release if neither platform has an asset
+    if (!linuxAsset && !macAsset) continue;
+
+    const isLatestStable = release.tag_name === latestStableTag;
+    const badge = createBadgeHTML(release, isLatestStable);
+
+    const linuxLink = linuxAsset
+      ? `<a href="${linuxAsset.browser_download_url}" class="release-platform-link">Linux</a>`
+      : '<span class="release-platform-link disabled">Linux</span>';
+
+    const macLink = macAsset
+      ? `<a href="${macAsset.browser_download_url}" class="release-platform-link">macOS</a>`
+      : '<span class="release-platform-link disabled">macOS</span>';
+
+    const li = document.createElement('li');
+    li.innerHTML = `<div class="release-row-multi"><div class="release-row-info"><span class="release-version">${release.tag_name}</span>${badge}</div><div class="release-platform-links">${linuxLink}${macLink}</div></div>`;
+    rows.push(li);
+  }
+
+  if (rows.length === 0) {
+    showEmptyState('linuxMacReleaseList', 'No binary releases available');
+    return;
+  }
+
+  list.innerHTML = '';
+  rows.forEach((li) => list.appendChild(li));
+}
+
+// Show empty state in a dropdown list
+function showEmptyState(listId, message) {
+  const list = document.getElementById(listId);
+  if (!list) return;
+  list.innerHTML = `<li class="release-dropdown-empty">${message}</li>`;
+}
+
+// Close all open dropdowns
+function closeAllDropdowns() {
+  document.querySelectorAll('.release-dropdown.open').forEach((dd) => {
+    dd.classList.remove('open');
+  });
+  document.querySelectorAll('.dropdown-toggle').forEach((btn) => {
+    btn.setAttribute('aria-expanded', 'false');
+  });
+}
+
+// Initialize dropdown toggle behavior
+function initDropdowns() {
+  document.querySelectorAll('.dropdown-toggle').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const wrapper = btn.closest('.dropdown-wrapper');
+      const dropdown = wrapper.querySelector('.release-dropdown');
+      const isOpen = dropdown.classList.contains('open');
+
+      // Close all dropdowns first
+      closeAllDropdowns();
+
+      // Toggle the clicked one (if it was closed)
+      if (!isOpen) {
+        dropdown.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
+
+  // Click outside closes dropdowns
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.dropdown-wrapper')) {
+      closeAllDropdowns();
+    }
+  });
+
+  // Escape key closes dropdowns and returns focus
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const openDropdown = document.querySelector('.release-dropdown.open');
+      if (openDropdown) {
+        const wrapper = openDropdown.closest('.dropdown-wrapper');
+        const toggle = wrapper.querySelector('.dropdown-toggle');
+        closeAllDropdowns();
+        toggle.focus();
+      }
+    }
+  });
+}
+
+// Fetch releases.json and populate dropdowns
 function fetchReleases() {
   fetch('releases.json')
     .then((res) => {
@@ -183,22 +336,18 @@ function fetchReleases() {
       return res.json();
     })
     .then((releases) => {
-      if (!Array.isArray(releases) || releases.length === 0) return;
-
-      const latest = releases[0];
-      if (!latest.assets || latest.assets.length === 0) return;
-
-      const winAsset = latest.assets.find((a) =>
-        /windows/i.test(a.name) || /\.exe$/i.test(a.name)
-      );
-
-      if (winAsset && winAsset.browser_download_url) {
-        const btn = document.getElementById('windowsDownloadBtn');
-        if (btn) btn.href = winAsset.browser_download_url;
+      if (!Array.isArray(releases) || releases.length === 0) {
+        showEmptyState('windowsReleaseList', 'No releases available');
+        showEmptyState('linuxMacReleaseList', 'No releases available');
+        return;
       }
+
+      populateWindowsDropdown(releases);
+      populateLinuxMacDropdown(releases);
     })
     .catch(() => {
-      // Silent fallback — releases.json may not exist yet
+      showEmptyState('windowsReleaseList', 'Could not load releases');
+      showEmptyState('linuxMacReleaseList', 'Could not load releases');
     });
 }
 
@@ -259,6 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCopyButtons();
   initTabs();
   initScrollAnimations();
+  initDropdowns();
   fetchVersion();
   fetchReleases();
   detectOS();

@@ -142,10 +142,40 @@
                         </button>
                     </div>
                     <p class="tab-hint">Requires <code>bash</code> and <code>curl</code></p>
+
+                    <div class="binary-divider">
+                        <span class="divider-line"></span>
+                        <span class="divider-text">or download binary</span>
+                        <span class="divider-line"></span>
+                    </div>
+                    <div class="dropdown-wrapper">
+                        <button id="linuxMacDownloadBtn" class="download-btn-secondary dropdown-toggle" aria-expanded="false" aria-haspopup="listbox">
+                            Download Binary
+                            <svg class="dropdown-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <ul id="linuxMacReleaseList" class="release-dropdown" role="listbox">
+                            <li class="release-dropdown-loading">Loading releases...</li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="tab-panel" data-tab="windows">
-                    <a id="windowsDownloadBtn" href="https://github.com/Karthikeya-Akhandam/filemind/releases/latest" target="_blank" rel="noopener noreferrer" class="download-btn-primary">Download for Windows</a>
+                    <div class="dropdown-wrapper">
+                        <button id="windowsDownloadBtn" class="download-btn-primary dropdown-toggle" aria-expanded="false" aria-haspopup="listbox">
+                            Download for Windows
+                            <svg class="dropdown-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <ul id="windowsReleaseList" class="release-dropdown" role="listbox">
+                            <li class="release-dropdown-loading">Loading releases...</li>
+                        </ul>
+                    </div>
+                    <noscript>
+                        <a href="https://github.com/Karthikeya-Akhandam/filemind/releases/latest" class="download-btn-primary">Download for Windows</a>
+                    </noscript>
                     <p class="tab-hint">Standalone <code>.exe</code> — no Python required</p>
                 </div>
 
