@@ -14,17 +14,28 @@ jobs:
     outputs:
       upload_url: ${{ steps.create_release_step.outputs.upload_url }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag is on main branch
+        run: |
+          if ! git branch -r --contains ${{ github.sha }} | grep -q 'origin/main'; then
+            echo "::error::Tag ${{ github.ref_name }} is not on the main branch. Aborting release."
+            exit 1
+          fi
+
       - name: Create Release
         id: create_release_step
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_PAT }}
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
           generate_release_notes: true
+          token: ${{ secrets.RELEASE_PAT }}
 
   build-and-upload-assets: # Job 2: Builds for each OS and uploads assets
     needs: create-release
