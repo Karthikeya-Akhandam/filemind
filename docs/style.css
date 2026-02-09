@@ -1,9 +1,10 @@
 :root {
-    --primary-color: #007bff;
-    --secondary-color: #f8f9fa;
-    --text-color: #333;
-    --light-gray: #e9ecef;
-    --dark-gray: #6c757d;
+    --primary-color: #e66b44; /* Reddish-orange from logo */
+    --background-color: #1a1a1a;
+    --surface-color: #2a2a2a;
+    --text-color: #f0f0f0;
+    --subtle-text-color: #a0a0a0;
+    --border-color: #444;
     --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -13,7 +14,7 @@ body {
     color: var(--text-color);
     margin: 0;
     padding: 0;
-    background-color: #fff;
+    background-color: var(--background-color);
 }
 
 .container {
@@ -24,9 +25,9 @@ body {
 
 /* Header */
 header {
-    background: #fff;
+    background: var(--surface-color);
     padding: 1rem 0;
-    border-bottom: 1px solid var(--light-gray);
+    border-bottom: 1px solid var(--border-color);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -46,6 +47,7 @@ header .logo {
 header .logo img {
     height: 40px;
     margin-right: 15px;
+    border-radius: 50%; /* Make the logo circular */
 }
 
 header h1 {
@@ -55,7 +57,7 @@ header h1 {
 }
 
 header nav a {
-    color: var(--dark-gray);
+    color: var(--subtle-text-color);
     text-decoration: none;
     margin-left: 20px;
     font-weight: 500;
@@ -68,45 +70,48 @@ header nav a:hover {
 
 /* Hero Section */
 .hero {
-    background-color: var(--secondary-color);
-    padding: 4rem 0;
+    background-color: var(--background-color);
+    padding: 5rem 0;
     text-align: center;
 }
 
 .hero h2 {
-    font-size: 2.5rem;
+    font-size: 2.8rem;
     margin-bottom: 1rem;
 }
 
 .hero p {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     max-width: 600px;
     margin: 0 auto 2rem auto;
-    color: var(--dark-gray);
+    color: var(--subtle-text-color);
 }
 
 .cta-button {
     background-color: var(--primary-color);
     color: #fff;
-    padding: 12px 25px;
+    padding: 14px 30px;
     border-radius: 5px;
     text-decoration: none;
-    font-weight: 500;
-    transition: background-color 0.3s ease;
+    font-weight: bold;
+    transition: transform 0.2s ease, background-color 0.3s ease;
+    display: inline-block;
 }
 
 .cta-button:hover {
-    background-color: #0056b3;
+    background-color: #d95a33;
+    transform: translateY(-2px);
 }
 
 /* Features Section */
 .features {
     padding: 4rem 0;
+    background-color: var(--surface-color);
 }
 
 .features h2 {
     text-align: center;
-    font-size: 2rem;
+    font-size: 2.2rem;
     margin-bottom: 3rem;
 }
 
@@ -117,30 +122,33 @@ header nav a:hover {
 }
 
 .feature-item {
-    text-align: center;
-    padding: 1.5rem;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    padding: 2rem;
+    border-radius: 8px;
 }
 
 .feature-item h3 {
-    font-size: 1.3rem;
+    font-size: 1.5rem;
     margin-bottom: 0.5rem;
+    color: var(--primary-color);
 }
 
 /* Download Section */
 .download {
-    background-color: var(--secondary-color);
+    background-color: var(--background-color);
     padding: 4rem 0;
     text-align: center;
 }
 
 .download h2 {
-    font-size: 2rem;
+    font-size: 2.2rem;
     margin-bottom: 1rem;
 }
 
 .download p {
     font-size: 1.1rem;
-    color: var(--dark-gray);
+    color: var(--subtle-text-color);
     margin-bottom: 2rem;
 }
 
@@ -158,7 +166,7 @@ header nav a:hover {
 }
 
 .download .button {
-    background-color: #28a745;
+    background-color: var(--primary-color);
     color: #fff;
     padding: 12px 25px;
     border-radius: 5px;
@@ -168,7 +176,7 @@ header nav a:hover {
 }
 
 .download .button:hover {
-    background-color: #218838;
+    background-color: #d95a33;
 }
 
 .install-script {
@@ -176,11 +184,12 @@ header nav a:hover {
 }
 
 .install-script pre {
-    background-color: var(--light-gray);
+    background-color: var(--surface-color);
+    color: var(--text-color);
     padding: 1rem;
     border-radius: 5px;
     display: inline-block;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     text-align: left;
     white-space: pre-wrap;
     word-break: break-all;
@@ -193,14 +202,19 @@ header nav a:hover {
 
 /* Footer */
 footer {
-    background-color: #343a40;
-    color: #fff;
+    background-color: var(--surface-color);
+    color: var(--subtle-text-color);
     text-align: center;
     padding: 2rem 0;
     font-size: 0.9rem;
+    border-top: 1px solid var(--border-color);
 }
 
 footer a {
-    color: #fff;
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+footer a:hover {
     text-decoration: underline;
 }

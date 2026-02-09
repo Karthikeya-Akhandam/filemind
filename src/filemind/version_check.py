@@ -10,7 +10,7 @@ from . import config
 
 CACHE_FILE = config.APP_DIR / "version_cache.json"
 CACHE_EXPIRY_SECONDS = 24 * 60 * 60  # 24 hours
-REPO_API_URL = "https://api.github.com/repos/Karthikeya-Akhandam/filemind/releases/latest"
+VERSION_URL = "https://karthikeya-akhandam.github.io/filemind/version.txt"
 
 def get_cached_version() -> Optional[str]:
     """Reads the latest version from the cache if it's not expired."""
@@ -33,13 +33,12 @@ def set_cached_version(latest_version: str):
     except IOError:
         pass # Fail silently if cache can't be written
 
-def get_latest_version_from_github() -> Optional[str]:
-    """Fetches the latest version tag from the GitHub API and caches it."""
+def get_latest_version_from_url() -> Optional[str]:
+    """Fetches the latest version string from the hosted version.txt file."""
     try:
-        response = requests.get(REPO_API_URL, timeout=5)
+        response = requests.get(VERSION_URL, timeout=5)
         response.raise_for_status()
-        tag_name = response.json()["tag_name"]
-        latest_version_str = tag_name.lstrip('v')
+        latest_version_str = response.text.strip()
         set_cached_version(latest_version_str)
         return latest_version_str
     except requests.RequestException:
@@ -60,7 +59,7 @@ def check_for_new_version() -> Optional[Tuple[str, str]]:
 
     latest_version_str = get_cached_version()
     if not latest_version_str:
-        latest_version_str = get_latest_version_from_github()
+        latest_version_str = get_latest_version_from_url()
 
     if not latest_version_str:
         return None
