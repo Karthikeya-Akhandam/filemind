@@ -179,12 +179,17 @@ def calculate_hybrid_scores(semantic_results: Tuple, keyword_chunk_ids: List[int
 
     # Process semantic search results
     if semantic_chunk_ids_flat.size > 0:
-        # FAISS returns 0-based indices, our DB is 1-based
+        # FAISS returns 0-based indices, our DB is 1-based.
+        # Ensure semantic_chunk_ids_flat is indeed a flat array before .tolist()
+        # If it's 2D (1,N), flatten it to 1D
+        if semantic_chunk_ids_flat.ndim > 1:
+            semantic_chunk_ids_flat = semantic_chunk_ids_flat.flatten()
+            
         semantic_db_ids = (semantic_chunk_ids_flat + 1).tolist()
         chunk_details = get_chunk_details_by_ids(semantic_db_ids)
         
         for i, (chunk_id, file_id, _) in enumerate(chunk_details):
-            score = float(distances[i])
+            score = float(distances[0][i]) # distances also need to be flattened or indexed correctly
             if score > file_scores[file_id]["score"]:
                 file_scores[file_id]["score"] = score
 
@@ -200,4 +205,3 @@ def calculate_hybrid_scores(semantic_results: Tuple, keyword_chunk_ids: List[int
     sorted_files = sorted(file_scores.items(), key=lambda item: item[1]["score"], reverse=True)
     
     return sorted_files
-
