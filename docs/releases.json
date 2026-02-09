@@ -1,0 +1,86 @@
+[
+  {
+    "tag_name": "v0.1.5-alpha",
+    "name": "Release v0.1.5-alpha",
+    "prerelease": true,
+    "html_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/tag/v0.1.5-alpha",
+    "published_at": "2026-02-09T20:10:14Z",
+    "assets": [
+      {
+        "name": "filemind-v0.1.5-alpha-linux-amd64",
+        "browser_download_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/download/v0.1.5-alpha/filemind-v0.1.5-alpha-linux-amd64"
+      },
+      {
+        "name": "filemind-v0.1.5-alpha-macos-amd64",
+        "browser_download_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/download/v0.1.5-alpha/filemind-v0.1.5-alpha-macos-amd64"
+      },
+      {
+        "name": "filemind-v0.1.5-alpha-windows-amd64.exe",
+        "browser_download_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/download/v0.1.5-alpha/filemind-v0.1.5-alpha-windows-amd64.exe"
+      }
+    ]
+  },
+  {
+    "tag_name": "v0.1.3-alpha",
+    "name": "Release v0.1.3-alpha",
+    "prerelease": true,
+    "html_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/tag/v0.1.3-alpha",
+    "published_at": "2026-02-09T11:16:08Z",
+    "assets": [
+      {
+        "name": "filemind-v0.1.3-alpha-linux-amd64",
+        "browser_download_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/download/v0.1.3-alpha/filemind-v0.1.3-alpha-linux-amd64"
+      },
+      {
+        "name": "filemind-v0.1.3-alpha-macos-amd64",
+        "browser_download_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/download/v0.1.3-alpha/filemind-v0.1.3-alpha-macos-amd64"
+      },
+      {
+        "name": "filemind-v0.1.3-alpha-windows-amd64.exe",
+        "browser_download_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/download/v0.1.3-alpha/filemind-v0.1.3-alpha-windows-amd64.exe"
+      }
+    ]
+  },
+  {
+    "tag_name": "v0.1.1-alpha",
+    "name": "Release v0.1.1-alpha",
+    "prerelease": true,
+    "html_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/tag/v0.1.1-alpha",
+    "published_at": "2026-02-08T18:43:30Z",
+    "assets": [
+      {
+        "name": "filemind-v0.1.1-alpha-linux-amd64",
+        "browser_download_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/download/v0.1.1-alpha/filemind-v0.1.1-alpha-linux-amd64"
+      },
+      {
+        "name": "filemind-v0.1.1-alpha-macos-amd64",
+        "browser_download_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/download/v0.1.1-alpha/filemind-v0.1.1-alpha-macos-amd64"
+      },
+      {
+        "name": "filemind-v0.1.1-alpha-windows-amd64.exe",
+        "browser_download_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/download/v0.1.1-alpha/filemind-v0.1.1-alpha-windows-amd64.exe"
+      }
+    ]
+  },
+  {
+    "tag_name": "v0.1.0-alpha",
+    "name": "Release v0.1.0-alpha",
+    "prerelease": true,
+    "html_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/tag/v0.1.0-alpha",
+    "published_at": "2026-02-07T12:31:45Z",
+    "assets": [
+      {
+        "name": "filemind-v0.1.0-alpha-linux-amd64",
+        "browser_download_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/download/v0.1.0-alpha/filemind-v0.1.0-alpha-linux-amd64"
+      },
+      {
+        "name": "filemind-v0.1.0-alpha-macos-amd64",
+        "browser_download_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/download/v0.1.0-alpha/filemind-v0.1.0-alpha-macos-amd64"
+      },
+      {
+        "name": "filemind-v0.1.0-alpha-windows-amd64.exe",
+        "browser_download_url": "https://github.com/Karthikeya-Akhandam/filemind/releases/download/v0.1.0-alpha/filemind-v0.1.0-alpha-windows-amd64.exe"
+      }
+    ]
+  }
+]
