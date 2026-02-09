@@ -45,6 +45,11 @@ filemind.wiki/
 .geminiignore
 GEMINI.md
 
+# Claude CLI specific
+.claude/
+.claudeignore
+CLAUDE.md
+
 # FileMind specific
 .filemind/
 
