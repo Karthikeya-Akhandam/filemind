@@ -1,10 +1,11 @@
 from pathlib import Path
 import os
 import time
-from typing import List
+from typing import List, Optional
 from collections import defaultdict
 import sys
 import shutil
+import importlib.metadata
 
 import typer
 
@@ -17,10 +18,38 @@ from . import (
     extractor,
 )
 
+def version_callback(value: bool):
+    if value:
+        try:
+            version = importlib.metadata.version("filemind")
+            typer.echo(f"filemind version {version}")
+        except importlib.metadata.PackageNotFoundError:
+            typer.echo("filemind version: (local source)")
+        raise typer.Exit()
+
 app = typer.Typer(
     help="FileMind: A local-first file intelligence engine.",
     add_completion=False,
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
+
+@app.callback()
+def main(
+    version: Optional[bool] = typer.Option(
+        None,
+        "--version",
+        "-v",
+        callback=version_callback,
+        is_eager=True,
+        help="Show the application's version and exit.",
+    )
+):
+    """
+    FileMind: A local-first file intelligence engine.
+    Use `filemind [COMMAND] --help` for more information on a specific command.
+    """
+    pass
+
 
 @app.command()
 def init():
@@ -287,6 +316,22 @@ def search(query: str = typer.Argument(..., help="The text to search for."), top
                 typer.secho(" (Keyword Match)", fg=typer.colors.MAGENTA)
             else:
                 typer.echo("")
+
+@app.command()
+def upgrade():
+    """
+    Provides instructions on how to upgrade FileMind to the latest version.
+    """
+    typer.secho("Fetching upgrade instructions...", fg=typer.colors.BLUE)
+    
+    # This check determines if the app is a standalone binary
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        typer.secho("\nTo upgrade this standalone application, please re-run the installation script:", fg=typer.colors.GREEN)
+        typer.secho("  curl -fsSL https://raw.githubusercontent.com/Karthikeya-Akhandam/filemind/main/install.sh | sh", fg=typer.colors.BRIGHT_MAGENTA)
+    else:
+        typer.secho("\nTo upgrade this pip-installed version, please run:", fg=typer.colors.GREEN)
+        typer.secho("  pip install --upgrade filemind", fg=typer.colors.BRIGHT_MAGENTA)
+
 
 @app.command()
 def uninstall():
