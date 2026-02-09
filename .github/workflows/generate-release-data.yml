@@ -22,10 +22,11 @@ jobs:
 
       - name: Fetch and process release data
         id: fetch_data
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Fetch all releases (including pre-releases)
-          RELEASES_API_URL="https://api.github.com/repos/${{ github.repository }}/releases"
-          RELEASES_JSON=$(curl -s $RELEASES_API_URL)
+          RELEASES_JSON=$(gh api repos/${{ github.repository }}/releases --paginate)
 
           # Use jq to parse and format data for the releases.json structure
           # Filter for actual release assets (executables, not source code zips/tar.gz)
@@ -41,7 +42,7 @@ jobs:
                 .assets[] | {
                   name: .name,
                   browser_download_url: .browser_download_url
-                } | select(.name | test("filemind-v.*-(linux-amd64|macos-amd64|windows-amd64\.exe)$")) # Filter for specific assets
+                } | select(.name | test("filemind-v.*-(linux-amd64|macos-amd64|windows-amd64\\.exe)$"))
               ]
             }
           ]')
