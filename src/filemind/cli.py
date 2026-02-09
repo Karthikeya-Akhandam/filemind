@@ -107,7 +107,7 @@ def upgrade():
     typer.secho("Checking for new versions...", fg=typer.colors.BLUE)
     try:
         current_version_str = importlib.metadata.version("filemind")
-        latest_version_str = version_check.get_latest_version_from_github()
+        latest_version_str = version_check.get_latest_version_from_url()
 
         if not latest_version_str:
             typer.secho("Could not fetch the latest version from GitHub.", fg=typer.colors.RED)
