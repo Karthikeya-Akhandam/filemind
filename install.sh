@@ -17,10 +17,15 @@ REPO="Karthikeya-Akhandam/filemind" # <<< TODO: CHANGE THIS TO YOUR GITHUB USERN
 BIN_NAME="filemind"
 
 get_latest_release() {
-  # Fetches the latest tag name from GitHub releases
-  curl --silent "https://api.github.com/repos/$REPO/releases/latest" | # Get latest release from GitHub API
-    grep '"tag_name":' |                                            # Get tag line
-    sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
+  # Fetches the latest tag name from releases.json on GitHub Pages
+  # (avoids GitHub API rate limits and includes pre-releases)
+  JSON=$(curl --silent "https://karthikeya-akhandam.github.io/filemind/releases.json")
+  # Prefer latest stable release; fall back to latest pre-release
+  TAG=$(echo "$JSON" | grep -B1 '"prerelease": false' | grep '"tag_name":' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+  if [ -z "$TAG" ]; then
+    TAG=$(echo "$JSON" | grep -m 1 '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+  fi
+  echo "$TAG"
 }
 
 main() {
