@@ -3,7 +3,7 @@ import sys; sys.setrecursionlimit(5000)
 
 
 a = Analysis(
-    ['src\\filemind\\cli.py'],
+    ['pyinstaller_entry.py'],
     pathex=[],
     binaries=[],
     datas=[],

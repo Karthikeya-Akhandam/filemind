@@ -82,7 +82,7 @@ jobs:
             PYINSTALLER_ADD_DATA="--add-data assets/models:models"
           fi
 
-          pyinstaller --onefile --name "$ASSET_BASE_NAME" $PYINSTALLER_ADD_DATA src/filemind/cli.py
+          pyinstaller --onefile --name "$ASSET_BASE_NAME" $PYINSTALLER_ADD_DATA pyinstaller_entry.py
 
           # Export environment variables for upload
           if [[ "${{ runner.os }}" == "Windows" ]]; then
